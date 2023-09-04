@@ -1,5 +1,5 @@
 
-class UserController {
+export default class UserController {
 
     public async getAllUsers(req: Request, res: Response) {
         try {
