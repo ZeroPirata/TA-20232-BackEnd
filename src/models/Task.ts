@@ -7,7 +7,7 @@ import {
 } from "typeorm";
 import { PriorityLevels } from "./PriorityLevels";
 import { User } from "./User";
-import { StatusLevels } from "./statusLevels";
+import { StatusLevels } from "./StatusLevels";
 import { Subtask } from "./Subtask";
 @Entity({ name: "task" })
 export class Task {

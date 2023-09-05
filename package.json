@@ -1,9 +1,15 @@
 {
+  "scripts": {
+    "dev": "ts-node-dev src/index.ts",
+    "start": "ts-node src/index.ts",
+  },
   "devDependencies": {
+    "@types/node": "^20.5.9",
     "typescript": "^5.2.2"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
+    "dotenv": "^16.0.3",
     "typeorm": "^0.3.17"
   }
 }
