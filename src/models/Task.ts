@@ -45,7 +45,7 @@ export class Task {
     done!: boolean;
 
     @Column({
-        type: "number"
+        type: "int"
     })
     timeSpent!: number;
 
