@@ -1,8 +1,22 @@
-class UserService{
+import { Repository } from "typeorm";
+import { DataBaseSource } from "../config/database";
+import { User } from "../models";
 
-    public async getAllUser(){
-        return [{name: 'user1'},{name: 'user2'},{name: 'user3'}];
+class UserService{
+    private userRepository: Repository<User>;
+    constructor() {
+        this.userRepository = DataBaseSource.getRepository(User);
     }
+    public async getAllUser() {
+        try {
+          const getAllUser = await this.userRepository
+            .createQueryBuilder("user")
+            .getMany();
+         return getAllUser;
+        } catch (error) {
+          return error
+        }
+      }
 
 }
 
