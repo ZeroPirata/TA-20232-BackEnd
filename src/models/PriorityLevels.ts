@@ -1,5 +1,5 @@
 export enum PriorityLevels {
-    HIGH = "alta prioridade",
-    MEDIUM = "media prioridade",
-    LOW = "baixa prioridade"
+    HIGH     = "alta prioridade",
+    MEDIUM   = "media prioridade",
+    LOW      = "baixa prioridade"
 }
