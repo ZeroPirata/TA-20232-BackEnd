@@ -1,12 +1,22 @@
+import { Request, Response } from "express";
+import UserService from "../services/userService";
+import userService from "../services/userService";
 
-export default class UserController {
+class UserController {
 
     public async getAllUsers(req: Request, res: Response) {
         try {
-            console.log('get all users')
+            const users = await userService.getAllUser();
+            console.log(users);
+            if (!users) {
+                res.status(404).json({ error: "Users not found" });
+            }else{
+                res.status(200).json(users);
+            }
         } catch (error) {
-            console.log(error)
+            res.status(500).json({ error: "Internal Server Error" });
         }
     }
-
 }
+
+export default new UserController();
