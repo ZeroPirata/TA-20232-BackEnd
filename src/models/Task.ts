@@ -1,16 +1,21 @@
 import {
     Entity,
     PrimaryGeneratedColumn,
-    Column
+    Column,
+    ManyToOne,
+    OneToMany
 } from "typeorm";
 import { PriorityLevels } from "./PriorityLevels";
+import { User } from "./User";
+import { StatusLevels } from "./StatusLevels";
+import { Subtask } from "./Subtask";
 @Entity({ name: "task" })
 export class Task {
 
     @PrimaryGeneratedColumn({
         type: "int",
     })
-    task_id!: number;
+    id!: number;
 
     @Column({
         type: "varchar",
@@ -29,6 +34,13 @@ export class Task {
     })
     priority!: PriorityLevels;
 
+    @Column({
+        type: "enum",
+        enum: StatusLevels,
+        default: StatusLevels.TODO,
+    })
+    status!: PriorityLevels;
+
     @Column()
     done!: boolean;
 
@@ -40,5 +52,12 @@ export class Task {
     @Column({
         type: "date"
     })
-    expirationDate!: string;
+    deadline!: string;
+
+    @ManyToOne(() => User, (user) => user.tasks)
+    user!: User;
+
+    @OneToMany(() => Subtask, (subtask) => subtask.task)
+    subtasks!: Subtask[];
+
 }

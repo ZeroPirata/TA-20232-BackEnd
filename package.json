@@ -9,6 +9,10 @@
     "@types/nodemon": "^1.19.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "@types/node": "^20.5.9",
+    "typescript": "^5.2.2",
+    "bcrypt": "^5.1.0",
+    "dotenv": "^16.0.3",
     "typeorm": "^0.3.17"
   },
   "scripts": {
