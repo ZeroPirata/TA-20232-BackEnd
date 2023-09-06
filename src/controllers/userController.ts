@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { UserRepository } from "../repositories/UserRepository";
 import { UserDto } from "../dtos/users/userUpdateDto";
-import UserService from "../services/userService";
+import userService from "../services/userService";
 import { User } from "../models";
 import "../config/dotenv"
 import * as bcrypt from "bcrypt"
@@ -80,7 +80,7 @@ class UserController {
 
     public async getAllUsers(req: Request, res: Response) {
         try {
-            const users = await UserService.getAllUser();
+            const users = await userService.getAllUser();
             console.log(users);
             if (!users) {
                 res.status(404).json({ error: "Users not found" });
@@ -111,14 +111,14 @@ class UserController {
             if (userExists && userId !== userExists.id)
                 return res.status(400).json({ message: "Email já está sendo utilizado" });
     
-            if (req.body.oldPassword && !await UserService.DecodePassword(req.body.oldPassword, userExists.password))
+            if (req.body.oldPassword && !await userService.DecodePassword(req.body.oldPassword, userExists.password))
                 return res.status(400).json({ message: "Senha anterior incorreta" });
     
             const userUpdate: UserDto = req.body;
             const user = UserRepository.create(userUpdate);
     
             if (req.body.password) {
-                const encodedPassword: string = await UserService.EncodePassword(req.body.password);
+                const encodedPassword: string = await userService.EncodePassword(req.body.password);
                 user.password = encodedPassword;
             }
             user.id = userId; 
