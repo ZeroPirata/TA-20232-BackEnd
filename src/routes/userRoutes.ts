@@ -9,5 +9,6 @@ userRouter.post("/login", UserController.userLogin)
 userRouter.post("/create", UserController.createUser);
 userRouter.use(auth)
 userRouter.get("/getAll", UserController.getAllUsers);
+userRouter.put("/updateUser", UserController.updateUser);
 
 export default userRouter;
