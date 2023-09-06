@@ -17,6 +17,15 @@ class UserService{
         }
     }
 
+    public async verifyEmail(user: User): Promise<User | undefined>{
+      try {
+        const verifyUser = await this.userRepository.findOne({ where: { email: user?.email } });
+        return verifyUser || undefined;
+      } catch (error) {
+        throw error;
+      }
+    }
+
     public async getAllUser() {
         try {
           const getAllUser = await this.userRepository
