@@ -34,7 +34,6 @@ class UserController {
         try {
             const users = await UserService.getAllUser();
             console.log(users);
-            const users = await UserService.getAllUser();
             if (!users) {
                 res.status(404).json({ error: "Users not found" });
             } else {
