@@ -9,6 +9,7 @@ import { PriorityLevels } from "./PriorityLevels";
 import { User } from "./User";
 import { StatusLevels } from "./StatusLevels";
 import { Subtask } from "./Subtask";
+
 @Entity({ name: "task" })
 export class Task {
 
@@ -39,7 +40,7 @@ export class Task {
         enum: StatusLevels,
         default: StatusLevels.TODO,
     })
-    status!: PriorityLevels;
+    status!: StatusLevels; 
 
     @Column()
     done!: boolean;
