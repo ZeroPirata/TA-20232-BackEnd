@@ -8,6 +8,16 @@ class UserService{
     constructor() {
         this.userRepository = DataBaseSource.getRepository(User);
     }
+
+    public async createUser(user: User) {
+        try {
+            const newUser = await this.userRepository.save(user);
+            return newUser;
+        } catch (error) {
+            return error
+        }
+    }
+
     public async getAllUser() {
         try {
           const getAllUser = await this.userRepository
