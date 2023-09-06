@@ -13,6 +13,14 @@ class TaskController {
     }
 }
 
+public async getAllTasks(req: Request, res: Response) {
+    try {
+      const allTasks = await TaskService.getAllTasks();
+      res.status(200).json({ message: "All tasks", data: allTasks });
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 
 
 }

@@ -18,6 +18,17 @@ class TaskService {
         }
     }
 
+    public async getAllTasks() {
+        try {
+            const allTasks = await this.taskRepository
+                .createQueryBuilder("task")
+                .getMany();
+            return allTasks;
+        } catch (error) {
+            return error;
+        }
+    }
+
 
 }
 
