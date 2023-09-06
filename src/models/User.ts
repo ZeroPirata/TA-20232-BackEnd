@@ -3,8 +3,12 @@ import {
     PrimaryGeneratedColumn,
     Column,
     OneToMany,
+    BeforeInsert,
+    BeforeUpdate,
 } from "typeorm";
 import { Task } from "./Task";
+import * as bcrypt from "bcrypt"
+
 
 @Entity({ name: "user" })
 export class User {
