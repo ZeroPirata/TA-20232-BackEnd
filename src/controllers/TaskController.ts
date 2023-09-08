@@ -7,9 +7,9 @@ class TaskController {
     try {
       const taskData: Task = req.body; 
       const createdTask = await TaskService.createTask(taskData);
-      res.status(201).json({ message: "Task created successfully", data: createdTask });
+      res.status(200).json({ message: "Task created successfully", data: createdTask });
     } catch (error) {
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(400).json({  error: "Error creating task" });
     }
 }
 
@@ -18,7 +18,7 @@ public async getAllTasks(req: Request, res: Response) {
       const allTasks = await TaskService.getAllTasks();
       res.status(200).json({ message: "All tasks", data: allTasks });
     } catch (error) {
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(400).json({ error: "Tasks not found" });
     }
   }
 
@@ -27,9 +27,9 @@ public async getAllTasks(req: Request, res: Response) {
       const taskId: number = parseInt(req.params.id, 10);
       const task = await TaskService.getTaskById(taskId);
       res.status(200).json({ message: "Task found", data: task });
-    } catch (error: any) { // Indicar 'any' para que o TypeScript permita acessar 'message'
+    } catch (error: any) { 
       if (error.message === "Task not found") {
-        res.status(404).json({ error: "Task not found" });
+        res.status(400).json({ error: "Task not found" });
       } else {
         res.status(500).json({ error: "Internal Server Error" });
       }
