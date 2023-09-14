@@ -29,6 +29,31 @@ class TaskService {
         }
     }
 
+    public async getTaskById(id: number) {
+        try {
+            const task = await this.taskRepository.findOne({ where: { id } });
+            if (!task) {
+                throw new Error("Task not found");
+            }
+            return task;
+        } catch (error) {
+            return error;
+        }
+    }
+    
+    public async getTasksByUserId(userId: number) {
+        try {
+            const tasks = await this.taskRepository
+                .createQueryBuilder("task")
+                .where("task.userId = :userId", { userId })
+                .getMany();
+
+            return tasks;
+        } catch (error) {
+            return error;
+        }
+    }
+
 
 }
 
