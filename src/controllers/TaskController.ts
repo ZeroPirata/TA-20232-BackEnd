@@ -85,7 +85,29 @@ public async getAllTasks(req: Request, res: Response) {
         res.status(500).json({ error: "Internal Server Error" });
       }
     }
-  }}
-  
+}
+
+  public async deleteTask(req: Request, res: Response) {
+
+    const { id } = req.params;
+    const userId = parseInt(id, 10);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
+    }
+
+    try {
+      const taskId: number = parseInt(req.params.id, 10);
+      const task = await TaskService.deleteTask(taskId);
+      res.status(200).json({ message: "Task deleted successfully", data: task });
+    } catch (error: any) {
+      if (error.message === "Task not found") {
+        res.status(404).json({ error: "Task not found" });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    }
+  }
+}
 
 export default new TaskController();

@@ -66,6 +66,18 @@ class TaskService {
         }
     }
 
+    public async deleteTask(id: number) {
+        try {
+            const deletedTask = await this.taskRepository.delete(id);
+            if (!deletedTask.affected) {
+                throw new Error("Task not found");
+            }
+            return deletedTask;
+        } catch (error) {
+            return error;
+        }
+    }
+
 
 }
 
