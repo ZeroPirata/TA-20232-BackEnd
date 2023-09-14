@@ -2,9 +2,12 @@ import { Repository } from "typeorm";
 import bcrypt from 'bcrypt'
 import { DataBaseSource } from "../config/database";
 import { User } from "../models";
+import { UserDto } from "../dtos/users/userUpdateDto";
+import { UserRepository } from "../repositories/UserRepository";
 
 class UserService{
     private userRepository: Repository<User>;
+    GetUserData: any;
     constructor() {
         this.userRepository = DataBaseSource.getRepository(User);
     }
@@ -37,6 +40,34 @@ class UserService{
           return error
         }
       }
+
+      public async updateUser(userId: number, userData: UserDto) {
+        try {
+          const userExists = await UserRepository.findOneBy({ email: userData.email });
+    
+          if (!userExists) {
+            throw new Error("Usuário não existe no sistema");
+          }
+
+          if (userExists.email !== userData.email) {
+            throw new Error("Email já está sendo utilizado");
+          }
+    
+          const updatedUser: UserDto = { ...userExists, ...userData };
+    
+          if (userData.password) {
+            updatedUser.password = await this.EncodePassword(userData.password);
+          }
+    
+          const savedUser = await UserRepository.update(userId, updatedUser);
+    
+          return savedUser;
+        } catch (error) {
+          console.error(error);
+          throw new Error("Erro ao atualizar usuário");
+        }
+      }
+
       public async EncodePassword(password: string): Promise<string>{
         const saltRounds = 10;
         let hashedPassword = '';

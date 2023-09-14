@@ -6,6 +6,7 @@ import { User } from "../models";
 import "../config/dotenv"
 import * as bcrypt from "bcrypt"
 import * as jwt from "jsonwebtoken"
+import { JwtPayload } from "jsonwebtoken";
 
 class UserController {
     public async createUser(req: Request, res: Response) {
@@ -130,6 +131,17 @@ class UserController {
         }
     }
     
+    public async deleteUsers(req: Request, res: Response) {
+        const { id } = req.params
+        let header = req.headers.authorization as string
+        try {
+            const userData: JwtPayload = userService.GetUserData(header)
+            
+            return res.status(200).json(await UserRepository.delete(id))
+        } catch (error) {
+            return res.status(400).json({ message: "Falha ao deletar usuário" })
+        }
+    }
 
 }
 
