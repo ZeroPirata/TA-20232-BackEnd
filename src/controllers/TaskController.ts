@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import TaskService from "../services/taskService";
 import { Task } from "../models";
 import userService from "../services/userService";
+import { TaskUpdateDto } from "../dtos/tasks/taskUpdateDto";
+import { taskRepository } from "../repositories/TaskRepository";
 
 class TaskController {
   public async createTask(req: Request, res: Response) {
@@ -58,6 +60,32 @@ public async getAllTasks(req: Request, res: Response) {
     }
   }
 
-}
+  public async updateTask(req: Request, res: Response) {
+
+    const { id } = req.params;
+    const userId = parseInt(id, 10);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
+    }
+
+    try {
+      let taskUpdate : TaskUpdateDto = req.body;
+      let task = taskRepository.create(taskUpdate);
+      task.id = parseInt(id, 10);
+
+      await taskRepository.save(task);
+      return res.status(200).json({ message: "Task updated successfully", data: task });
+  }
+
+    catch (error: any) {
+      if (error.message === "Task not found") {
+        res.status(404).json({ error: "Task not found" });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    }
+  }}
+  
 
 export default new TaskController();

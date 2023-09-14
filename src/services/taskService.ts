@@ -54,6 +54,18 @@ class TaskService {
         }
     }
 
+    public async updateTask(id: number, task: Task) {
+        try {
+            const updatedTask = await this.taskRepository.update(id, task);
+            if (!updatedTask.affected) {
+                throw new Error("Task not found");
+            }
+            return updatedTask;
+        } catch (error) {
+            return error;
+        }
+    }
+
 
 }
 
