@@ -1,9 +1,11 @@
+
 import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
     ManyToOne,
-    OneToMany
+    OneToMany,
+    JoinColumn
 } from "typeorm";
 import { PriorityLevels } from "./PriorityLevels";
 import { User } from "./User";
@@ -59,6 +61,7 @@ export class Task {
     user!: User;
 
     @OneToMany(() => Subtask, (subtask) => subtask.task)
-    subtasks!: Subtask[];
+    @JoinColumn({name: "subtask_id"})
+    subtask!: Subtask[];
 
 }
