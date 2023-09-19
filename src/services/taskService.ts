@@ -31,7 +31,12 @@ class TaskService {
 
     public async getTaskById(id: number) {
         try {
-            const task = await this.taskRepository.findOne({ where: { id } });
+            const task = await this.taskRepository.findOne({
+                where: { id },
+                relations: {
+                    subtask: true
+                } 
+            });
             if (!task) {
                 throw new Error("Task not found");
             }
