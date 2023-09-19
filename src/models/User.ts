@@ -33,7 +33,7 @@ export class User {
     })
     password!: string;
 
-    @OneToMany(() => Task, (task) => task.user)
+    @OneToMany(() => Task, (task) => task.userId)
     tasks!: Task[];
     static id: string;
 }

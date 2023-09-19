@@ -41,10 +41,8 @@ public async getAllTasks(req: Request, res: Response) {
 
   public async getTasksByUserId(req: Request, res: Response) {
     try {
-      const userId: number = parseInt(req.params.userId, 10);
+      const userId = parseInt(req.params.userId, 10);
       const tasks = await TaskService.getTasksByUserId(userId);
-
-      console.log(tasks);
 
       if (!Array.isArray(tasks) || tasks.length === 0) {
         return res.status(404).json({ error: "No tasks found for this user" });
@@ -60,13 +58,39 @@ public async getAllTasks(req: Request, res: Response) {
     }
   }
 
+  public async getExpiredTasks(req: Request, res: Response) {
+    const { id, date } = req.params;
+    const userId = parseInt(id, 10);
+    console.log(date)
+    if (isNaN(userId)) {
+      return res.status(400).json({message:"parameter 'id' is not a valid number"})
+    }
+
+    try {
+      const tasks = await TaskService.getExpiredTasks(userId, date);
+      
+      if (!Array.isArray(tasks) || tasks.length === 0) {
+        return res.status(404).json({ error: "No tasks found for this user" });
+      }
+      res.status(200).json({ message: "Expired tasks found for user", data: tasks });
+
+    }catch(error: any){
+      if (error.message === "User not found") {
+        res.status(404).json({ error: "User not found" });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    }
+    
+  }
+
   public async updateTask(req: Request, res: Response) {
 
     const { id } = req.params;
     const userId = parseInt(id, 10);
     
     if (isNaN(userId)) {
-      return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
+      return res.status(400).json({message:"parameter 'id' is not a valid number"})
     }
 
     try {

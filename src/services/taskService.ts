@@ -54,6 +54,20 @@ class TaskService {
         }
     }
 
+    public async getExpiredTasks(userId: number, date: string) {
+        try{
+            const tasks: Task[] = await this.taskRepository
+                .createQueryBuilder("task")
+                .where("task.userId = :userId", { userId })
+                .andWhere("task.deadline = :date", { date })
+                .getMany();
+
+            return tasks;
+        } catch(error){
+            return error;
+        }
+    }
+
     public async updateTask(id: number, task: Task) {
         try {
             const updatedTask = await this.taskRepository.update(id, task);
