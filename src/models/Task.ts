@@ -5,7 +5,8 @@ import {
     Column,
     ManyToOne,
     OneToMany,
-    JoinColumn
+    JoinColumn,
+    ManyToMany
 } from "typeorm";
 import { PriorityLevels } from "./PriorityLevels";
 import { User } from "./User";
@@ -57,10 +58,10 @@ export class Task {
     })
     deadline!: string;
 
-    @ManyToOne(() => User, (user) => user.tasks)
-    user!: User;
+/*     @ManyToOne(() => User, (user) => user.tasks)
+    user!: User; */
 
-    @OneToMany(() => Subtask, (subtask) => subtask.task)
+    @ManyToMany(() => Subtask, (subtask) => subtask.task)
     @JoinColumn({name: "subtask_id"})
     subtask!: Subtask[];
 
