@@ -5,6 +5,8 @@ import {
     OneToMany,
     BeforeInsert,
     BeforeUpdate,
+    ManyToMany,
+    JoinTable,
 } from "typeorm";
 import { Task } from "./Task";
 import * as bcrypt from "bcrypt"
@@ -33,7 +35,8 @@ export class User {
     })
     password!: string;
 
-    @OneToMany(() => Task, (task) => task.user)
+    @ManyToMany(type => Task)
+    @JoinTable()
     tasks!: Task[];
-    static id: string;
+
 }

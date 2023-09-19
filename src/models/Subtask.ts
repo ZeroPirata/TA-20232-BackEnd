@@ -2,10 +2,11 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    ManyToOne
+    ManyToOne,
+    JoinColumn
 } from "typeorm";
 import { Task } from "./Task";
-@Entity({name: "sub_task"})
+@Entity({name: "subtask"})
 export class Subtask {
 
     @PrimaryGeneratedColumn({
@@ -23,9 +24,9 @@ export class Subtask {
     })
     done!: boolean;
 
-    @ManyToOne(() => Task, (task) => task.subtasks)
+    @ManyToOne(() => Task, (task) => task.subtask)
+    @JoinColumn({name: "task_id"})
     task!: Task;
 
-    
 
 }
