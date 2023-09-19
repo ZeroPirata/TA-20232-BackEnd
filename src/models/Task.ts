@@ -58,8 +58,10 @@ export class Task {
     })
     deadline!: string;
 
-/*     @ManyToOne(() => User, (user) => user.tasks)
-    user!: User; */
+    @Column({
+        type:"int"
+    })
+    user_id!: number;
 
     @ManyToMany(() => Subtask, (subtask) => subtask.task)
     @JoinColumn({name: "subtask_id"})
