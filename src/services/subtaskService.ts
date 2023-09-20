@@ -27,6 +27,18 @@ class SubtaskService {
         }
     }    
 
+    public async updateSubtask(id: number, subtask: Subtask) {
+        try{
+            const updatedSubtask = await this.subtaskRepository.update(id, subtask);
+            if(!updatedSubtask.affected){
+                return "NOT FOUND";
+            }
+            return updatedSubtask;
+        } catch (error) {
+            return error;
+        }
+    }
+
 }
 
 export default new SubtaskService();

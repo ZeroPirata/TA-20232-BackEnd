@@ -4,7 +4,6 @@ const subtaskRouter = Router();
 
 subtaskRouter.post("/create", SubtaskController.createSubtask);
 subtaskRouter.get("/getByTask/:taskId", SubtaskController.getSubtasksByTask);
-
-
+subtaskRouter.put("/update/:id", SubtaskController.updateSubtask)
 
 export default subtaskRouter;
