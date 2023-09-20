@@ -23,30 +23,73 @@ class SubtaskController {
             res.status(200).json({ data: subtasks });
         } catch (error) {
             res.status(400).json({ error: "Error fetching subtasks" });
-        } 
+        }
     }
 
-    public async updateSubtask(req: Request, res: Response){
+    public async getSubtaskById(req: Request, res: Response) {
+        try {
+            const subtaskId: number = parseInt(req.params.subtaskId);
+            const subtask = await SubtaskService.getSubtaskById(subtaskId);
+            res.status(200).json({ data: subtask });
+        } catch (error) {
+            res.status(400).json({ error: "Error fetching subtasks" })
+        }
+    }
+
+    public async getAllSubtasks(req: Request, res: Response) {
+        try {
+            const allSubtasks = await subtaskService.getAllSubtasks();
+            res.status(200).json({ message: "All subtasks", data: allSubtasks });
+        } catch (error) {
+            res.status(400).json({ error: "Tasks not found" });
+        }
+    }
+
+    public async deleteSubtask(req: Request, res: Response) {
 
         const { id } = req.params;
         const taskId = parseInt(id, 10);
 
-        if(isNaN(taskId)){
-            return res.status(400).json({message: "Parameter id is not a valid number"})
+        if (isNaN(taskId)) {
+            return res.status(400).json({ message: "Parameter id is not a valid number" })
         }
 
-        try{
-            let subtaskUpdate : SubtaskUpdateDto = req.body;
+        try {
+            const subtaskId: number = parseInt(req.params.id, 10);
+            const subtask = await subtaskService.deleteSubtask(subtaskId);
+            res.status(200).json({ message: "Subtask deleted successfully", data: subtask });
+
+        } catch (error: any) {
+            if (error.message === "Subtask not found") {
+                res.status(404).json({ error: "Subtask not found" });
+            } else {
+                res.status(500).json({ error: "Internal Server Error" });
+            }
+        }
+
+    }
+
+    public async updateSubtask(req: Request, res: Response) {
+
+        const { id } = req.params;
+        const taskId = parseInt(id, 10);
+
+        if (isNaN(taskId)) {
+            return res.status(400).json({ message: "Parameter id is not a valid number" })
+        }
+
+        try {
+            let subtaskUpdate: SubtaskUpdateDto = req.body;
             let subtask = subtaskRepository.create(subtaskUpdate);
             subtask.id = parseInt(id, 10);
 
             await subtaskRepository.save(subtask);
-            return res.status(200).json({ message: "Subtask updated successfully", data: subtask});
-        }catch(error: any){
-            if (error.message === "Subtask not found"){
+            return res.status(200).json({ message: "Subtask updated successfully", data: subtask });
+        } catch (error: any) {
+            if (error.message === "Subtask not found") {
                 res.status(404).json({ error: "Subtask not found" });
-            }else{
-                res.status(500).json({ error: "Internal server error"})
+            } else {
+                res.status(500).json({ error: "Internal server error" })
             }
         }
 
