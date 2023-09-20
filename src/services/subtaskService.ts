@@ -36,6 +36,17 @@ class SubtaskService {
         }
     }
 
+    public async getAllSubtasks(){
+        try{
+            const allSubtasks = await this.subtaskRepository
+                                    .createQueryBuilder("subtask")
+                                    .getMany();
+            return allSubtasks;
+        }catch (error) {
+            return error;
+        }
+    }
+
     public async updateSubtask(id: number, subtask: Subtask) {
         try {
             const updatedSubtask = await this.subtaskRepository.update(id, subtask);

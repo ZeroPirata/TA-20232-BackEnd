@@ -36,6 +36,15 @@ class SubtaskController {
         }
     }
 
+    public async getAllSubtasks(req: Request, res: Response){
+        try{
+            const allSubtasks = await subtaskService.getAllSubtasks();
+            res.status(200).json({message: "All subtasks", data: allSubtasks});
+        } catch (error) {
+        res.status(400).json({ error: "Tasks not found" });
+        }
+    }
+
     public async updateSubtask(req: Request, res: Response){
 
         const { id } = req.params;
