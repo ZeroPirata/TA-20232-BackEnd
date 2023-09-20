@@ -25,12 +25,21 @@ class SubtaskService {
         } catch (error) {
             return error;
         }
-    }    
+    }
+
+    public async getSubtaskById(subtaskId: number) {
+        try {
+            const subtask = await this.subtaskRepository.findOneBy({ id : subtaskId });
+            return subtask;
+        } catch (error) {
+            return error;
+        }
+    }
 
     public async updateSubtask(id: number, subtask: Subtask) {
-        try{
+        try {
             const updatedSubtask = await this.subtaskRepository.update(id, subtask);
-            if(!updatedSubtask.affected){
+            if (!updatedSubtask.affected) {
                 return "NOT FOUND";
             }
             return updatedSubtask;

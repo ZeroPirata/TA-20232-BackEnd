@@ -26,6 +26,16 @@ class SubtaskController {
         } 
     }
 
+    public async getSubtaskById(req: Request, res: Response){
+        try{
+            const subtaskId: number = parseInt(req.params.subtaskId);
+            const subtask = await SubtaskService.getSubtaskById(subtaskId);
+            res.status(200).json({ data: subtask }); 
+        }catch(error){
+            res.status(400).json({ error: "Error fetching subtasks"})
+        }
+    }
+
     public async updateSubtask(req: Request, res: Response){
 
         const { id } = req.params;
