@@ -18,6 +18,15 @@ class SubtaskService {
         }
     }
 
+    public async getSubtasksByTask(taskId: number) {
+        try {
+            const subtasks = await this.subtaskRepository.find({ where: { task: { id: taskId } } });
+            return subtasks;
+        } catch (error) {
+            return error;
+        }
+    }    
+
 }
 
 export default new SubtaskService();

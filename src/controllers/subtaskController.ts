@@ -12,6 +12,18 @@ class SubtaskController {
             res.status(400).json({ error: "Error creating subtask" });
         }
     }
+
+    public async getSubtasksByTask(req: Request, res: Response) {
+        try {
+            const taskId: number = parseInt(req.params.taskId);
+            const subtasks = await SubtaskService.getSubtasksByTask(taskId);
+            res.status(200).json({ data: subtasks });
+        } catch (error) {
+            res.status(400).json({ error: "Error fetching subtasks" });
+        }
+    }
+
+
 }
 
 export default new SubtaskController();
