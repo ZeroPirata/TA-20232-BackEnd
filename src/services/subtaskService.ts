@@ -51,7 +51,7 @@ class SubtaskService {
         try {
             const updatedSubtask = await this.subtaskRepository.update(id, subtask);
             if (!updatedSubtask.affected) {
-                return "NOT FOUND";
+                throw new Error("Subtask not found");
             }
             return updatedSubtask;
         } catch (error) {
@@ -59,6 +59,17 @@ class SubtaskService {
         }
     }
 
+    public async deleteSubtask(id: number){
+        try{
+            const deletedSubtask = await this.subtaskRepository.delete(id);
+            if(!deletedSubtask.affected){
+                throw new Error("Subtask not found");
+            }
+            return deletedSubtask;
+        }catch (error) {
+            return error;
+        }
+    }
 }
 
 export default new SubtaskService();
