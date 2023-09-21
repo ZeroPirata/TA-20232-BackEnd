@@ -19,12 +19,16 @@ app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 const subtaskRoutes = require('./routes/subtaskRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const userRoutes = require('./routes/userRoutes');
+const statusRoutes = require('./routes/statusRoutes');
+const router = require('./routes/index');
 
 
 // Use the route files in your Express application
-app.use('/api1', subtaskRoutes);
-app.use('/api2', taskRoutes);
-app.use('/api3', userRoutes);
+app.use('/subtask', subtaskRoutes);
+app.use('/task', taskRoutes);
+app.use('/user', userRoutes);
+app.use('/status', statusRoutes);
+app.use('/routes', router);
 
 // Start the server and listen on the defined port
 server.listen(port, () => {
