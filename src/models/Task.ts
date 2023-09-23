@@ -6,7 +6,8 @@ import {
     ManyToOne,
     OneToMany,
     JoinColumn,
-    ManyToMany
+    ManyToMany,
+    CreateDateColumn
 } from "typeorm";
 import { PriorityLevels } from "./PriorityLevels";
 import { User } from "./User";
@@ -57,6 +58,10 @@ export class Task {
         type: "date"
     })
     deadline!: string;
+
+    @CreateDateColumn({ name: 'created_at'})
+    createdAt!: Date;
+
 
     @ManyToOne(() => User, (user) => user.tasks)
     userId!: number;
