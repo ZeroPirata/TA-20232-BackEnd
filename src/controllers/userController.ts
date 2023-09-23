@@ -28,12 +28,12 @@ class UserController {
             const verifyEmail: User | undefined = await userService.verifyEmail(user)
 
             if(verifyEmail?.email){
-                return res.status(409).json({ error: "Email already exists. Please register with a different email."})
+                return res.status(409).json({ error: "Email já existente. Por favor, cadastre um diferente."})
             }
             
             user.password = bcrypt.hashSync(user.password, bcrypt.genSaltSync(15))
             let createNewUser = await userService.createUser(user);
-            return res.status(201).json({ message: "User created successfully", data: createNewUser });
+            return res.status(201).json({ message: "Usuário criado com sucesso.", data: createNewUser });
         } catch (error) {
             res.status(500).json({ error: "Internal Server Error" });
         }
@@ -58,13 +58,13 @@ class UserController {
 
             const userEmail: User | undefined = await userService.verifyEmail(user)
             if(!userEmail?.email){
-                return res.status(401).json({ error: "Please check your credentials and try again" })
+                return res.status(401).json({ error: "Por favor, cheque as suas credenciais e tente novamenete." })
             }
 
             const isPasswordValid = await bcrypt.compare(user.password, userEmail.password)
 
             if (!isPasswordValid) {
-                return res.status(401).json({ error: "Please check your credentials and try again" });
+                return res.status(401).json({ error: "Por favor, cheque as suas credenciais e tente novamenete." });
             }
 
             const token = jwt.sign({
