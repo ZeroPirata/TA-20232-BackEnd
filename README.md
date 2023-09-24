@@ -38,4 +38,37 @@
 ```
 
  <h3>:arrows_counterclockwise: Rotas do Sistema</h3>
-  
+
+
+### 📄 Tarefas
+
+|                                                                    Tipo | Rota                                 | Ação                            |
+| ----------------------------------------------------------------------: | :----------------------------------- | :------------------------------ |
+| [![](https://img.shields.io/badge/POST-4682B4?style=for-the-badge)]() | `/create`                                | Cadastra uma nova tarefa|
+| [![](https://img.shields.io/badge/GET-2E8B57?style=for-the-badge)]() | `/all`                                    | Busca por todos as tarefas|
+| [![](https://img.shields.io/badge/GET-2E8B57?style=for-the-badge)]() | `/getById/:id`                            | Busca uma tarefa por seu Id|
+| [![](https://img.shields.io/badge/GET-2E8B57?style=for-the-badge)]() | `/getExpiredTasks/:id/:date`              | Busca por todas as tarefas expiradas|
+| [![](https://img.shields.io/badge/GET-2E8B57?style=for-the-badge)]() | `/getByUserId/:userId`                    | Busca por todos as tarefas de um usuário|
+| [![](https://img.shields.io/badge/PUT-9370DB?style=for-the-badge)]() | `/update/:id`                             | Atualiza a Tarefa |
+| [![](https://img.shields.io/badge/DELETE-CD853F?style=for-the-badge)]() | `/delete/:id`                          | Deleta uma Tarefa|
+
+### 🪪 Usuários
+
+|                                                                    Tipo | Rota                                 | Ação                            |
+| ----------------------------------------------------------------------: | :----------------------------------- | :------------------------------ |
+| [![](https://img.shields.io/badge/POST-4682B4?style=for-the-badge)]() | `/login`                                 | Autentifica um usuário na sessão|
+| [![](https://img.shields.io/badge/POST-4682B4?style=for-the-badge)]() | `/create`                                | Cadastra um novo usuário|
+| [![](https://img.shields.io/badge/GET-2E8B57?style=for-the-badge)]() | `/getAll`                                 | Busca por todos os usuários cadastrados|
+| [![](https://img.shields.io/badge/PUT-9370DB?style=for-the-badge)]() | `/updateUser`                             | Atualiza um usuário |
+| [![](https://img.shields.io/badge/DELETE-CD853F?style=for-the-badge)]() | `deleteUser`                           | Deleta um usuário|
+
+### 📑 Subtask
+
+|                                                                    Tipo | Rota                                 | Ação                            |
+| ----------------------------------------------------------------------: | :----------------------------------- | :------------------------------ |
+| [![](https://img.shields.io/badge/POST-4682B4?style=for-the-badge)]() | `/create`                                | Cadastra uma nova subtarefa|
+| [![](https://img.shields.io/badge/GET-2E8B57?style=for-the-badge)]() | `/getById/:subtaskId`                     | Busca por uma subtarefa pelo seu id|
+| [![](https://img.shields.io/badge/GET-2E8B57?style=for-the-badge)]() | `/getAll`                                 | Busca todas as subtarefas cadastradas|
+| [![](https://img.shields.io/badge/GET-2E8B57?style=for-the-badge)]() | `ubtaskRouter.get("/getByTask/:taskId`    | Busca todas as subtarefas de uma tarefa|
+| [![](https://img.shields.io/badge/PUT-9370DB?style=for-the-badge)]() | `/update/:id`                             | Atualiza a subtarefa|
+| [![](https://img.shields.io/badge/DELETE-CD853F?style=for-the-badge)]() | `/delete/:id`                          | Deleta uma subtarefa|
