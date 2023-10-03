@@ -62,7 +62,7 @@ export class Task {
     @CreateDateColumn({
         name: 'last_execution'
     })
-    lastExecution!: string; 
+    lastExecution!: Date; 
 
     @Column({ 
         type: "date"
