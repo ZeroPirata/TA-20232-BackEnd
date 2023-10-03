@@ -80,6 +80,18 @@ class TaskService {
         }
     }
 
+    public async updateTasktimeSpent(id: number, timeSpent: number) {
+        try {
+            const updatedTask = await this.taskRepository.update(id, {timeSpent});
+            if (!updatedTask.affected) {
+                throw new Error("Task not found");
+            }
+            return updatedTask;
+        } catch (error) {
+            return error;
+        }
+    }
+
     public async deleteTask(id: number) {
         try {
             const deletedTask = await this.taskRepository.delete(id);
