@@ -55,13 +55,22 @@ export class Task {
     timeSpent!: number;
 
     @Column({
+        type: "int"
+    })
+    customInterval!: number;
+
+    @CreateDateColumn({
+        name: 'last_execution'
+    })
+    lastExecution!: string; 
+
+    @Column({ 
         type: "date"
     })
     deadline!: string;
 
     @CreateDateColumn({ name: 'created_at'})
     createdAt!: Date;
-
 
     @ManyToOne(() => User, (user) => user.tasks)
     userId!: number;
