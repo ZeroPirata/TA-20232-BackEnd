@@ -29,8 +29,10 @@ export class Task {
 
     @Column({
         type: "varchar",
+        nullable: true,
     })
     description!: string;
+
 
     @Column({
         type: "enum",
@@ -55,14 +57,15 @@ export class Task {
     timeSpent!: number;
 
     @Column({
-        type: "int"
+        type: "int",
+        nullable: true,
     })
     customInterval!: number;
 
     @CreateDateColumn({
         name: 'last_execution'
     })
-    lastExecution!: string; 
+    lastExecution!: Date; 
 
     @Column({ 
         type: "date"

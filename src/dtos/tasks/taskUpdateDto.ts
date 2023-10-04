@@ -14,9 +14,9 @@ export class TaskUpdateDto {
 
     done!: boolean
 
-    customInterval!: number
+    customInterval!: number 
 
-    lastExecution!: string
+    lastExecution!: Date
 
     timeSpent!: number
 
