@@ -93,6 +93,21 @@ class UserController {
         }
     }
 
+    public async getUserById(req: Request, res: Response){
+        try{
+            const userId: number = parseInt(req.params.id, 10);
+            const user = await userService.getUserById(userId);
+            res.status(200).json({ data: user });
+        }catch (error: any){
+            if(error.message === "User not found") {
+                res.status(400).json({error: "User not found"});
+            }else {
+                res.status(500).json({ error: "Internal Server Error"});
+            }
+
+        }
+    }
+
     public async updateUser(req: Request, res: Response) {
         const { id } = req.params;
         const userId = parseInt(id, 10); 
