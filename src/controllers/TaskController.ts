@@ -62,7 +62,6 @@ public async getAllTasks(req: Request, res: Response) {
   public async getExpiredTasks(req: Request, res: Response) {
     const { id, date } = req.params;
     const userId = parseInt(id, 10);
-    console.log(date)
     if (isNaN(userId)) {
       return res.status(400).json({message:"parameter 'id' is not a valid number"})
     }
