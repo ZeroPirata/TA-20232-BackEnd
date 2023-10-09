@@ -85,6 +85,27 @@ public async getAllTasks(req: Request, res: Response) {
     
   }
 
+  public async getTimeSpentByMonth(req: Request, res: Response) {
+    const { id, month } = req.params;
+    const userId = parseInt(id, 10);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({message:"parameter 'id' is not a valid number"})
+    }
+
+    try {
+      const timeSpent = await TaskService.getTimeSpentByMonth(userId, parseInt(month));
+      res.status(200).json({ message: "Time spent found for user", data: timeSpent });
+    } catch (error: any) {
+      if (error.message === "User not found") {
+        res.status(404).json({ error: "User not found" });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    }
+  }
+
+    
   public async updateTask(req: Request, res: Response) {
 
     const { id } = req.params;

@@ -68,6 +68,26 @@ class TaskService {
         }
     }
 
+    public async getTimeSpentByMonth(userId: number, month: number) {
+        try {
+            const tasks: Task[] = await this.taskRepository
+                .createQueryBuilder("task")
+                .where("task.userId = :userId", { userId })
+                .andWhere("MONTH(task.deadline) = :month", { month })
+                .getMany();
+
+            let timeSpent = 0;
+            tasks.forEach(task => {
+                timeSpent += task.timeSpent;
+            });
+
+            return timeSpent;
+        } catch (error) {
+            return error;
+        }
+    }
+
+
     public async updateTask(id: number, task: Task) {
         try {
             const updatedTask = await this.taskRepository.update(id, task);
