@@ -16,6 +16,17 @@ class StatusController {
       res.status(500).json("Frontend não deve ser renderizado");
     }
   }
+  /**
+   * Função responsável por atualização de tempo no banco;
+   * Utilizado para criação do LOG de tarefas ciclicas;
+   */
+  public async timeUpdate(req: Request, res: Response){
+    try {
+      
+    } catch (error) {
+      res.status(500).json({message: "Erro na atualização diária", error: error});
+    }
+  }
 }
 
 export default new StatusController();

@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
 import { Task } from "../models";
+import logService from "./logService";
 
 class TaskService {
     private taskRepository: Repository<Task>;
@@ -104,6 +105,43 @@ class TaskService {
         }
     }
 
+    public async completeNormalTask(id: number){
+        try {
+            let task = this.getTaskById(id);
+            const updatedTask = await this.taskRepository.update(id, {done : true});
+            if(!updatedTask.affected || !task){
+                throw new Error("Task not found");
+            }
+            return updatedTask;
+        } catch (error) {
+            return error;
+        }
+    }
+
+    public async completeCyclicTask(id: number){
+        try {
+            let task = await this.getTaskById(id);
+
+            
+
+            if(!task){
+                throw new Error("Task not found");
+            }
+            const result = await logService.createLogFromTask(task);
+            return result;
+        } catch (error) {
+            return error;
+        }
+    }
+    
+    /**
+     * @param task 
+     * @returns Verdadeiro caso a tarefa seja ciclica
+     */
+    public isTaskCyclic(task : Task | any) : boolean{
+        const isCyclic = task.customInterval != 0
+        return isCyclic; 
+    }
 
 }
 

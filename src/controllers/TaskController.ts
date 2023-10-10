@@ -5,6 +5,7 @@ import userService from "../services/userService";
 import { TaskUpdateDto } from "../dtos/tasks/taskUpdateDto";
 import { taskRepository } from "../repositories/TaskRepository";
 import { tasktimeUpdateDto } from "../dtos/tasks/tasktimeUpdateDto";
+import taskService from "../services/taskService";
 
 class TaskController {
   public async createTask(req: Request, res: Response) {
@@ -136,6 +137,23 @@ public async updatetaskTimeSpent(req: Request, res: Response) {
     } else {
       res.status(500).json({ error: "Internal Server Error" });
     }
+  }
+}
+
+public async completeTask(req: Request, res: Response){
+  try {
+    const taskId: number = parseInt(req.params.id, 10);
+    const task = await TaskService.getTaskById(taskId);
+  
+    let result;
+    if(!taskService.isTaskCyclic(task)){
+      result = await taskService.completeNormalTask(taskId);
+    }else{
+      result = await taskService.completeCyclicTask(taskId);
+    }
+    return res.status(200).json({ message: "Task completed successfully" })
+  } catch (error) {
+    return res.status(500).json({ message: error});
   }
 }
 
