@@ -114,20 +114,20 @@ class UserController {
         if (isNaN(userId)) {
             return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
         } 
-    
+        console.log(req.body)
         try {
             const userExists = await UserRepository.findOneBy({
-                email: req.body.email
+                id: userId
             });
+            console.log(userExists)
+            if (!userExists){
+                return res.status(400).json({ message: "Usuário não existe no sistema" });}
     
-            if (!userExists)
-                return res.status(400).json({ message: "Usuário não existe no sistema" });
+            if (userExists && userId !== userExists.id){
+                return res.status(400).json({ message: "Email já está sendo utilizado" });}
     
-            if (userExists && userId !== userExists.id)
-                return res.status(400).json({ message: "Email já está sendo utilizado" });
-    
-            if (req.body.oldPassword && !await userService.DecodePassword(req.body.oldPassword, userExists.password))
-                return res.status(400).json({ message: "Senha anterior incorreta" });
+            if (req.body.oldPassword && userExists && !await userService.DecodePassword(req.body.oldPassword, userExists.password)){
+                return res.status(400).json({ message: "Senha anterior incorreta" });}
     
             const userUpdate: UserDto = req.body;
             const user = UserRepository.create(userUpdate);
