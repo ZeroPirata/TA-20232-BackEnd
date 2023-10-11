@@ -57,7 +57,7 @@ class TaskService {
         }
     }
 
-    
+
     public async getExpiredTasks(userId: number, date: string) {
         try {
             const tasks: Task[] = await this.taskRepository
@@ -209,24 +209,70 @@ class TaskService {
         }
     }
 
-    /*     public async getCyclicTasksByUserId(userId: number) {
-            try {
-                const cyclicTasks = await this.taskRepository
-                    .createQueryBuilder('task')
-                    .where('task.customInterval IS NOT NULL AND task.customInterval != 0')
-                    .andWhere('task.userId = :userId', { userId })
-                    .getMany();
-                return cyclicTasks;
-            } catch (error) {
-                return error;
+    public async getAllOnlyCyclicTasks() {
+        try {
+            let allTasks = await this.taskRepository
+                .createQueryBuilder('task')
+                .getMany();
+
+            if (allTasks.length === 0) {
+                throw new Error("tasks not found");
             }
-        } */
+
+            const result: Task[] = [];
+            for (const task of allTasks) {
+                if (this.isTaskCyclic(task)) {
+                    const logs: Log[] = await logService.getAllLogsByTaskId(task.id);
+
+                    for (const thisLog of logs) {
+                        const thisTask: Task = await logService.logToTask(thisLog, task.userId);
+                        result.push(thisTask);
+                    }
+                }
+            }
+
+            return result;
+        } catch (error) {
+            return error;
+        }
+
+    }
+
+    public async getOnlyCyclicTasksByUserId(userId: number) {
+        try {
+            let allTasks = await this.taskRepository
+                .createQueryBuilder('task')
+                .where("task.userId = :userId", { userId })
+                .getMany();
+
+            if (allTasks.length === 0) {
+                throw new Error("tasks not found");
+            }
+
+            const result: Task[] = [];
+            for (const task of allTasks) {
+                if (this.isTaskCyclic(task)) {
+                    const logs: Log[] = await logService.getAllLogsByTaskId(task.id);
+
+                    for (const thisLog of logs) {
+                        const thisTask: Task = await logService.logToTask(thisLog, task.userId);
+                        result.push(thisTask);
+                    }
+                }
+            }
+
+            return result;
+        } catch (error) {
+            return error;
+        }
+
+    }
     public async getTasksByUserId(userId: number) {
 
         try {
             let allTasks = await this.taskRepository
                 .createQueryBuilder('task')
-                .where('task.userId = :userId', {userId})
+                .where('task.userId = :userId', { userId })
                 .getMany();
 
             if (allTasks.length === 0) {

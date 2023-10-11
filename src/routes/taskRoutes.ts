@@ -18,5 +18,8 @@ taskRouter.get("/all", TaskController.getAllTasksIncludeLog);
 taskRouter.get("/getAllNonCyclicTasks", TaskController.getAllTasks);
 taskRouter.get("/getNonCyclicTaskByUserId/:userId", TaskController.getNonCyclicTasksByUserId);
 taskRouter.get("/getByUserId/:userId", TaskController.getTasksByUserId);
+taskRouter.get("/getCyclicTaskByUserId/:userId", TaskController.getOnlyCyclicTasksByUserId);
+taskRouter.get("/getAllCyclicTasks", TaskController.getOnlyCyclicTasks);
+
 
 export default taskRouter;
