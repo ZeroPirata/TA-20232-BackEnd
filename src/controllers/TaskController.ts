@@ -104,7 +104,31 @@ public async getAllTasks(req: Request, res: Response) {
     }
   }
 
-    
+public async getTimeSpentMonthly(req: Request, res: Response) {
+    const { id, year } = req.params;
+    const userId = parseInt(id, 10);
+    const targetYear = parseInt(year, 10);
+  
+    if (isNaN(userId) || isNaN(targetYear)) {
+      return res.status(400).json({ message: "Parâmetros inválidos" });
+    }
+  
+    try {
+      const monthlyTimeSpent = await TaskService.getTimeSpentByMonth(userId, targetYear) as number[];
+      const response: { [key: string]: number } = {};
+
+      for (let i = 0; i < 12; i++) {
+        const monthKey = `mes${i + 1}`;
+        response[monthKey] = monthlyTimeSpent[i] || 0;
+      }
+
+      res.status(200).json({ data: response });
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+}
+
+
   public async updateTask(req: Request, res: Response) {
 
     const { id } = req.params;
