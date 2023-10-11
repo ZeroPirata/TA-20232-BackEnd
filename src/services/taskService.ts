@@ -168,6 +168,18 @@ class TaskService {
         return isCyclic; 
     }
 
+    public async getAllCyclicTasks() {
+        try {
+            const cyclicTasks = await this.taskRepository
+                .createQueryBuilder('task')
+                .where('task.customInterval IS NOT NULL AND task.customInterval != 0')
+                .getMany();
+            return cyclicTasks;
+        } catch (error) {
+            return error;
+        }
+    }
+
 }
 
 export default new TaskService();
