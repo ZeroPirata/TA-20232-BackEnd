@@ -192,7 +192,7 @@ class LogService {
      * Gera um ID especial para os logs. Gets e coisas do gênero precisam usar esse id para encontrar os respectivos logs (especialmente quando estiver procurando-o como uma task)
      * O nome do campo especial é "getterIdCode". É uma string
      * 
-     * O id especial SEMPRE será "(userId)_(id_da_task_original)_TASK_(daysAfterCreation do log)". Exemplo disso: "1_45_TASK_6". Dessa forma.
+     * O id especial SEMPRE será "(id_da_task_original)_TASK_(daysAfterCreation do log)". Exemplo disso: "45_TASK_6". Dessa forma.
      * @note Caso, em alguma ocasião, seja necessário alterar o id da tarefa original ligada ao log, é OBRIGATORIO que o ID seja alterado também
      * 
      * @param log O log recebido PRECISA estar com os campos "DaysAfterCreation" e "parentTask" registrados antes da função ser chamada
