@@ -68,6 +68,8 @@ class LogService {
             if(thisTask) {
                 task = thisTask;
             }
+
+
             let doesThisLogExistsAlready = await this.checkIfLogExists(newLog.getterIdCode, task.id);
 
             let result;
@@ -237,8 +239,9 @@ class LogService {
  */
     public logToTask(log: Log, userId: number): Task {
         const newTask = new Task();
-
+        
         // Copie os atributos do log para a nova tarefa
+        newTask.id = log.getterIdCode;
         newTask.name = log.name;
         newTask.description = log.description;
         newTask.priority = PriorityLevels.LOW;
@@ -246,7 +249,7 @@ class LogService {
         newTask.done = log.done;
         newTask.timeSpent = log.timeSpent;
         newTask.deadline = log.deadline;
-
+        newTask.createdAt = log.created_at;
         // Crie um array de subtasks a partir da string JSON
         // #TODO arrumar isso
         if (log.subtask) {
@@ -255,6 +258,15 @@ class LogService {
             newTask.subtask = [];
         }
 
+        let subtask_1 = new Subtask();
+        let subtask_2 = new Subtask();
+        let subtask_3 = new Subtask();
+
+        subtask_1.id = 5;
+        subtask_2.id = 20;
+        subtask_3.id = 40;
+
+        newTask.subtask = [subtask_1, subtask_2, subtask_3];
         newTask.userId = userId;
 
         return newTask;
@@ -281,7 +293,7 @@ class LogService {
      * @param taskId O ID da tarefa à qual o registro de log está vinculado.
      * @returns Retorna um objeto indicando se o registro de log existe e, se sim, o ID do registro.
      */
-    public async checkIfLogExists(getterId: string, taskId: number): Promise<{ doesLogExist: Boolean, logId: Number }> {
+    public async checkIfLogExists(getterId: string, taskId: number | string): Promise<{ doesLogExist: Boolean, logId: Number }> {
         try {
             const logs = await this.getAllLogsByTaskId(taskId);
             let exists = false;

@@ -26,6 +26,7 @@ class StatusController {
       const { id } = req.params;
       const userId = parseInt(id, 10); 
       const checkExpiredLogs = logService.verifyExpiredLogs(userId);
+      console.log("Rodando a task");
 
       res.status(200).json({message:"successful time update", response:JSON.stringify(checkExpiredLogs)});
     } catch (error) {
