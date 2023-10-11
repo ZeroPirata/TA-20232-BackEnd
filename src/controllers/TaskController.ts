@@ -38,6 +38,27 @@ public async getAllTasks(req: Request, res: Response) {
     }
 }
 
+public async getCyclicTasksByUserId(req: Request, res: Response) {
+  try {
+      const userId = parseInt(req.params.userId, 10);
+      
+      const cyclicTasks = await TaskService.getCyclicTasksByUserId(userId);
+
+      if (!Array.isArray(cyclicTasks) || cyclicTasks.length === 0) {
+          return res.status(404).json({ error: "No cyclic tasks found for this user" });
+      }
+
+      res.status(200).json({ message: "Cyclic tasks found for user", data: cyclicTasks });
+  } catch (error: any) {
+      if (error.message === "User not found") {
+          res.status(404).json({ error: "User not found" });
+      } else {
+          res.status(500).json({ error: "Internal Server Error" });
+      }
+  }
+}
+
+
 public async getTaskByIdLog(req: Request, res: Response){
   try {
     const id: string = req.params.id; 

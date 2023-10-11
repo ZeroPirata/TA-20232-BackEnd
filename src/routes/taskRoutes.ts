@@ -16,5 +16,6 @@ taskRouter.delete("/delete/:id", TaskController.deleteTask);
 taskRouter.post("/completeTask/:id", TaskController.completeTask);
 taskRouter.get("/getAllCyclicTasks", TaskController.getAllCyclicTasks);
 taskRouter.get("/getTaskByIdLog/:id", TaskController.getTaskByIdLog);
+taskRouter.get("/getCyclicTaskByUserId/:userId", TaskController.getCyclicTasksByUserId);
 
 export default taskRouter;

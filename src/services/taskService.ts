@@ -188,6 +188,20 @@ class TaskService {
         }
     }
 
+    public async getCyclicTasksByUserId(userId: number) {
+        try {
+            const cyclicTasks = await this.taskRepository
+                .createQueryBuilder('task')
+                .where('task.customInterval IS NOT NULL AND task.customInterval != 0')
+                .andWhere('task.userId = :userId', { userId })
+                .getMany();
+            return cyclicTasks;
+        } catch (error) {
+            return error;
+        }
+    }
+
+
 }
 
 export default new TaskService();
