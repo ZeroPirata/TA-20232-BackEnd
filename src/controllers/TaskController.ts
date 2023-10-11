@@ -109,24 +109,20 @@ public async getAllTasks(req: Request, res: Response) {
   public async getTimeSpentMonthly(req: Request, res: Response) {
     const { id, year } = req.params;
     const userId = parseInt(id, 10);
-    const targetYear = parseInt(year, 10);
-  
-    if (isNaN(userId) || isNaN(targetYear)) {
-      return res.status(400).json({ message: "Parâmetros inválidos" });
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
     }
-  
+
     try {
-      const monthlyTimeSpent = await TaskService.getTimeSpentByMonth(userId, targetYear) as number[];
-      const response: { [key: string]: number } = {};
-  
-      for (let i = 0; i < 12; i++) {
-        const monthKey = `mes${i + 1}`;
-        response[monthKey] = monthlyTimeSpent[i] || 0;
+      const timeSpent = await taskService.getTimeSpentMonthly(userId, parseInt(year));
+      res.status(200).json({ message: "Tempo gasto encontrado para o usuário", data: timeSpent });
+    } catch (error: any) {
+      if (error.message === "User not found") {
+        res.status(404).json({ error: "Usuário não encontrado" });
+      } else {
+        res.status(500).json({ error: "Erro interno do servidor" });
       }
-  
-      res.status(200).json({ data: response });
-    } catch (error) {
-      res.status(500).json({ error: "Internal Server Error" });
     }
   }
   

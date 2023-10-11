@@ -90,26 +90,34 @@ class TaskService {
 
     public async getTimeSpentMonthly(userId: number, year: number) {
         try {
-          const tasks: Task[] = await this.taskRepository
-            .createQueryBuilder("task")
-            .where("task.userId = :userId", { userId })
-            .andWhere(`YEAR(task.createdAt) = :year`, { year })
+            const tasks: Task[] = await this.taskRepository
+            .createQueryBuilder('task')
+            .where('task.userId = :userId', { userId })
+            .andWhere('DATE_FORMAT(task.createdAt, "%Y-%m-%d") BETWEEN :start AND :end', {
+                start: `${year}-01-01`,
+                end: `${year}-12-31`
+            })
             .getMany();
     
-          const monthlyTimeSpent: number[] = Array(12).fill(0);
+            const monthlyTimeSpent: { [month: string]: number } = {};
     
-          tasks.forEach(task => {
+            tasks.forEach((task) => {
             const createdAt = task.createdAt;
-            const month = createdAt.getMonth();
+            const month = createdAt.toLocaleString('en-US', { month: 'long' });
             const timeSpent = task.timeSpent;
-            monthlyTimeSpent[month] += timeSpent;
-          });
     
-          return monthlyTimeSpent;
+            if (!monthlyTimeSpent[month]) {
+                monthlyTimeSpent[month] = 0;
+            }
+    
+            monthlyTimeSpent[month] += timeSpent;
+            });
+    
+            return monthlyTimeSpent;
         } catch (error) {
-          throw error; 
+            throw error;
         }
-      }
+        }
 
     public async updateTask(id: number, task: Task) {
         try {
