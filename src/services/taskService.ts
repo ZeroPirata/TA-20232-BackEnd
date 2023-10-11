@@ -34,7 +34,7 @@ class TaskService {
         try {
             const task = await this.taskRepository.findOne({ where: { id } });
             if (!task) {
-                throw new Error("Task not found");
+                return null;
             }
             return task;
         } catch (error) {
@@ -105,10 +105,9 @@ class TaskService {
         }
     }
 
-    public async completeNormalTask(id: number){
+    public async completeNormalTask(task:any){
         try {
-            let task = this.getTaskById(id);
-            const updatedTask = await this.taskRepository.update(id, {done : true});
+            const updatedTask = await this.taskRepository.update(task.id, {done : true});
             if(!updatedTask.affected || !task){
                 throw new Error("Task not found");
             }
@@ -118,22 +117,6 @@ class TaskService {
         }
     }
 
-    public async completeCyclicTask(id: number){
-        try {
-            let task = await this.getTaskById(id);
-
-            
-
-            if(!task){
-                throw new Error("Task not found");
-            }
-            const result = await logService.createLogFromTask(task);
-            return result;
-        } catch (error) {
-            return error;
-        }
-    }
-    
     /**
      * @param task 
      * @returns Verdadeiro caso a tarefa seja ciclica

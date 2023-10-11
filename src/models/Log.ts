@@ -24,6 +24,11 @@ export class Log {
     id!: number;
 
     @Column({
+        type: "varchar"
+    })
+    getterIdCode!: string;
+
+    @Column({
         type: "varchar",
     }) 
     name!: string;
