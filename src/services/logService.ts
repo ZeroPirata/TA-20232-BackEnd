@@ -237,7 +237,7 @@ class LogService {
  *
  * Note: Esta função não salva a nova TASK no banco de dados.
  */
-    public logToTask(log: Log, userId: number): Task {
+    public async logToTask(log: Log, userId: number): Promise<Task> {
         const newTask = new Task();
         
         // Copie os atributos do log para a nova tarefa

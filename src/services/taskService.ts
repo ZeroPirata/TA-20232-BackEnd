@@ -1,6 +1,6 @@
 import { Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
-import { Task } from "../models";
+import { Log, Task } from "../models";
 import logService from "./logService";
 
 class TaskService {
@@ -23,6 +23,7 @@ class TaskService {
         try {
             const allTasks = await this.taskRepository
                 .createQueryBuilder("task")
+                .where('task.customInterval IS NOT NULL AND task.customInterval = 0')
                 .getMany();
             return allTasks;
         } catch (error) {
@@ -41,12 +42,13 @@ class TaskService {
             return error;
         }
     }
-    
-    public async getTasksByUserId(userId: number) {
+
+    public async getNonCylicTasksByUserId(userId: number) {
         try {
             const tasks = await this.taskRepository
                 .createQueryBuilder("task")
                 .where("task.userId = :userId", { userId })
+                .andWhere("task.customInterval IS NOT NULL AND task.customInterval = 0")
                 .getMany();
 
             return tasks;
@@ -55,8 +57,9 @@ class TaskService {
         }
     }
 
+    
     public async getExpiredTasks(userId: number, date: string) {
-        try{
+        try {
             const tasks: Task[] = await this.taskRepository
                 .createQueryBuilder("task")
                 .where("task.userId = :userId", { userId })
@@ -64,7 +67,7 @@ class TaskService {
                 .getMany();
 
             return tasks;
-        } catch(error){
+        } catch (error) {
             return error;
         }
     }
@@ -91,33 +94,33 @@ class TaskService {
     public async getTimeSpentMonthly(userId: number, year: number) {
         try {
             const tasks: Task[] = await this.taskRepository
-            .createQueryBuilder('task')
-            .where('task.userId = :userId', { userId })
-            .andWhere('DATE_FORMAT(task.createdAt, "%Y-%m-%d") BETWEEN :start AND :end', {
-                start: `${year}-01-01`,
-                end: `${year}-12-31`
-            })
-            .getMany();
-    
+                .createQueryBuilder('task')
+                .where('task.userId = :userId', { userId })
+                .andWhere('DATE_FORMAT(task.createdAt, "%Y-%m-%d") BETWEEN :start AND :end', {
+                    start: `${year}-01-01`,
+                    end: `${year}-12-31`
+                })
+                .getMany();
+
             const monthlyTimeSpent: { [month: string]: number } = {};
-    
+
             tasks.forEach((task) => {
-            const createdAt = task.createdAt;
-            const month = createdAt.toLocaleString('en-US', { month: 'long' });
-            const timeSpent = task.timeSpent;
-    
-            if (!monthlyTimeSpent[month]) {
-                monthlyTimeSpent[month] = 0;
-            }
-    
-            monthlyTimeSpent[month] += timeSpent;
+                const createdAt = task.createdAt;
+                const month = createdAt.toLocaleString('en-US', { month: 'long' });
+                const timeSpent = task.timeSpent;
+
+                if (!monthlyTimeSpent[month]) {
+                    monthlyTimeSpent[month] = 0;
+                }
+
+                monthlyTimeSpent[month] += timeSpent;
             });
-    
+
             return monthlyTimeSpent;
         } catch (error) {
             throw error;
         }
-        }
+    }
 
     public async updateTask(id: number, task: Task) {
         try {
@@ -133,7 +136,7 @@ class TaskService {
 
     public async updateTasktimeSpent(id: number, timeSpent: number) {
         try {
-            const updatedTask = await this.taskRepository.update(id, {timeSpent});
+            const updatedTask = await this.taskRepository.update(id, { timeSpent });
             if (!updatedTask.affected) {
                 throw new Error("Task not found");
             }
@@ -155,10 +158,10 @@ class TaskService {
         }
     }
 
-    public async completeNormalTask(task:any){
+    public async completeNormalTask(task: any) {
         try {
-            const updatedTask = await this.taskRepository.update(task.id, {done : true});
-            if(!updatedTask.affected || !task){
+            const updatedTask = await this.taskRepository.update(task.id, { done: true });
+            if (!updatedTask.affected || !task) {
                 throw new Error("Task not found");
             }
             return updatedTask;
@@ -171,37 +174,84 @@ class TaskService {
      * @param task 
      * @returns Verdadeiro caso a tarefa seja ciclica
      */
-    public isTaskCyclic(task : Task | any) : boolean{
+    public isTaskCyclic(task: Task | any): boolean {
         const isCyclic = task.customInterval != 0
-        return isCyclic; 
+        return isCyclic;
     }
 
     public async getAllCyclicTasks() {
         try {
-            const cyclicTasks = await this.taskRepository
+            let allTasks = await this.taskRepository
                 .createQueryBuilder('task')
-                .where('task.customInterval IS NOT NULL AND task.customInterval != 0')
                 .getMany();
-            return cyclicTasks;
+
+            if (allTasks.length === 0) {
+                throw new Error("tasks not found");
+            }
+
+            const result: Task[] = [];
+            for (const task of allTasks) {
+                if (this.isTaskCyclic(task)) {
+                    const logs: Log[] = await logService.getAllLogsByTaskId(task.id);
+
+                    for (const thisLog of logs) {
+                        const thisTask: Task = await logService.logToTask(thisLog, task.userId);
+                        result.push(thisTask);
+                    }
+                } else {
+                    result.push(task);
+                }
+            }
+
+            return result;
         } catch (error) {
             return error;
         }
     }
 
-    public async getCyclicTasksByUserId(userId: number) {
+    /*     public async getCyclicTasksByUserId(userId: number) {
+            try {
+                const cyclicTasks = await this.taskRepository
+                    .createQueryBuilder('task')
+                    .where('task.customInterval IS NOT NULL AND task.customInterval != 0')
+                    .andWhere('task.userId = :userId', { userId })
+                    .getMany();
+                return cyclicTasks;
+            } catch (error) {
+                return error;
+            }
+        } */
+    public async getTasksByUserId(userId: number) {
+
         try {
-            const cyclicTasks = await this.taskRepository
+            let allTasks = await this.taskRepository
                 .createQueryBuilder('task')
-                .where('task.customInterval IS NOT NULL AND task.customInterval != 0')
-                .andWhere('task.userId = :userId', { userId })
+                .where('task.userId = :userId', {userId})
                 .getMany();
-            return cyclicTasks;
+
+            if (allTasks.length === 0) {
+                throw new Error("tasks not found");
+            }
+
+            const result: Task[] = [];
+            for (const task of allTasks) {
+                if (this.isTaskCyclic(task)) {
+                    const logs: Log[] = await logService.getAllLogsByTaskId(task.id);
+
+                    for (const thisLog of logs) {
+                        const thisTask: Task = await logService.logToTask(thisLog, task.userId);
+                        result.push(thisTask);
+                    }
+                } else {
+                    result.push(task);
+                }
+            }
+
+            return result;
         } catch (error) {
             return error;
         }
     }
-
-
 }
 
 export default new TaskService();

@@ -28,21 +28,21 @@ public async getAllTasks(req: Request, res: Response) {
     }
   }
 
-  public async getAllCyclicTasks(req: Request, res: Response) {
+  public async getAllTasksIncludeLog(req: Request, res: Response) {
     try {
         const cyclicTasks = await TaskService.getAllCyclicTasks();
 
-        res.status(200).json({ message: "All cyclic tasks retrieved successfully", data: cyclicTasks });
+        res.status(200).json({ message: "All tasks retrieved successfully", data: cyclicTasks });
     } catch (error) {
         res.status(500).json({ error: "Internal server error while fetching cyclic tasks" });
     }
 }
 
-public async getCyclicTasksByUserId(req: Request, res: Response) {
+public async getTasksByUserId(req: Request, res: Response) {
   try {
       const userId = parseInt(req.params.userId, 10);
       
-      const cyclicTasks = await TaskService.getCyclicTasksByUserId(userId);
+      const cyclicTasks = await TaskService.getTasksByUserId(userId);
 
       if (!Array.isArray(cyclicTasks) || cyclicTasks.length === 0) {
           return res.status(404).json({ error: "No cyclic tasks found for this user" });
@@ -59,7 +59,7 @@ public async getCyclicTasksByUserId(req: Request, res: Response) {
 }
 
 
-public async getTaskByIdLog(req: Request, res: Response){
+public async getTaskById(req: Request, res: Response){
   try {
     const id: string = req.params.id; 
     const isLog: boolean = id.toUpperCase().includes('TASK'); 
@@ -87,25 +87,10 @@ public async getTaskByIdLog(req: Request, res: Response){
   }
 }
 
-
-  public async getTaskById(req: Request, res: Response) {
-    try {
-      const taskId: number = parseInt(req.params.id, 10);
-      const task = await TaskService.getTaskById(taskId);
-      res.status(200).json({ message: "Task found", data: task });
-    } catch (error: any) { 
-      if (error.message === "Task not found") {
-        res.status(400).json({ error: "Task not found" });
-      } else {
-        res.status(500).json({ error: "Internal Server Error" });
-      }
-    }
-  }
-
-  public async getTasksByUserId(req: Request, res: Response) {
+  public async getNonCyclicTasksByUserId(req: Request, res: Response) {
     try {
       const userId = parseInt(req.params.userId, 10);
-      const tasks = await TaskService.getTasksByUserId(userId);
+      const tasks = await TaskService.getNonCylicTasksByUserId(userId);
 
       if (!Array.isArray(tasks) || tasks.length === 0) {
         return res.status(404).json({ error: "No tasks found for this user" });
