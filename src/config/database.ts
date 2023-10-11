@@ -1,12 +1,12 @@
 import "reflect-metadata";
 import {DataSource} from "typeorm";
-import {Task, Subtask, User} from "../models";
+import {Task, Subtask, User, Log} from "../models";
 import * as dotenv from "dotenv";
 import fs from "fs";
 
 dotenv.config();
 
-const entidades = [Task, Subtask, User];
+const entidades = [Task, Subtask, User, Log];
 
 export const DataBaseSource = process.env.PATH_PEM
   ? new DataSource({

@@ -5,6 +5,8 @@ import userService from "../services/userService";
 import { TaskUpdateDto } from "../dtos/tasks/taskUpdateDto";
 import { taskRepository } from "../repositories/TaskRepository";
 import { tasktimeUpdateDto } from "../dtos/tasks/tasktimeUpdateDto";
+import taskService from "../services/taskService";
+import logService from "../services/logService";
 
 class TaskController {
   public async createTask(req: Request, res: Response) {
@@ -104,7 +106,31 @@ public async getAllTasks(req: Request, res: Response) {
     }
   }
 
-    
+  public async getTimeSpentMonthly(req: Request, res: Response) {
+    const { id, year } = req.params;
+    const userId = parseInt(id, 10);
+    const targetYear = parseInt(year, 10);
+  
+    if (isNaN(userId) || isNaN(targetYear)) {
+      return res.status(400).json({ message: "Parâmetros inválidos" });
+    }
+  
+    try {
+      const monthlyTimeSpent = await TaskService.getTimeSpentByMonth(userId, targetYear) as number[];
+      const response: { [key: string]: number } = {};
+  
+      for (let i = 0; i < 12; i++) {
+        const monthKey = `mes${i + 1}`;
+        response[monthKey] = monthlyTimeSpent[i] || 0;
+      }
+  
+      res.status(200).json({ data: response });
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+  
+
   public async updateTask(req: Request, res: Response) {
 
     const { id } = req.params;
@@ -156,6 +182,46 @@ public async updatetaskTimeSpent(req: Request, res: Response) {
     } else {
       res.status(500).json({ error: "Internal Server Error" });
     }
+  }
+}
+
+public async completeTask(req: Request, res: Response) {
+  try {
+    const id: string = req.params.id; // Receive the ID as a string
+    const isLogId: boolean = id.toUpperCase().includes('TASK'); // Check if the string contains "TASK"
+    let log;
+    let task : any;
+    let result;
+
+    if(isLogId === false){
+      const taskId: number = parseInt(id, 10); // Convert the ID to a number
+      task = await TaskService.getTaskById(taskId);
+
+      if(!task){
+        throw new Error("Task not found");
+      }
+
+      if(taskService.isTaskCyclic(task)){
+        log = await logService.taskToLog(task, true);
+
+        result = await logService.createLogFromTask(true, log)
+      }else{
+        result = await taskService.completeNormalTask(task);
+      }
+
+    }else{
+      log = await logService.findLogByGetterId(id);
+
+      if(log.name == null){
+        throw new Error("Task not found");
+      }
+
+      result = await logService.createLogFromTask(true, log);
+    }
+
+    return res.status(200).json({ message: "Task completed successfully" });
+  } catch (error:any) {
+    return res.status(500).json({ message: error.message });
   }
 }
 

@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
 import { Task } from "../models";
+import logService from "./logService";
 
 class TaskService {
     private taskRepository: Repository<Task>;
@@ -33,7 +34,7 @@ class TaskService {
         try {
             const task = await this.taskRepository.findOne({ where: { id } });
             if (!task) {
-                throw new Error("Task not found");
+                return null;
             }
             return task;
         } catch (error) {
@@ -87,6 +88,28 @@ class TaskService {
         }
     }
 
+    public async getTimeSpentMonthly(userId: number, year: number) {
+        try {
+          const tasks: Task[] = await this.taskRepository
+            .createQueryBuilder("task")
+            .where("task.userId = :userId", { userId })
+            .andWhere(`YEAR(task.createdAt) = :year`, { year })
+            .getMany();
+    
+          const monthlyTimeSpent: number[] = Array(12).fill(0);
+    
+          tasks.forEach(task => {
+            const createdAt = task.createdAt;
+            const month = createdAt.getMonth();
+            const timeSpent = task.timeSpent;
+            monthlyTimeSpent[month] += timeSpent;
+          });
+    
+          return monthlyTimeSpent;
+        } catch (error) {
+          throw error; 
+        }
+      }
 
     public async updateTask(id: number, task: Task) {
         try {
@@ -124,6 +147,26 @@ class TaskService {
         }
     }
 
+    public async completeNormalTask(task:any){
+        try {
+            const updatedTask = await this.taskRepository.update(task.id, {done : true});
+            if(!updatedTask.affected || !task){
+                throw new Error("Task not found");
+            }
+            return updatedTask;
+        } catch (error) {
+            return error;
+        }
+    }
+
+    /**
+     * @param task 
+     * @returns Verdadeiro caso a tarefa seja ciclica
+     */
+    public isTaskCyclic(task : Task | any) : boolean{
+        const isCyclic = task.customInterval != 0
+        return isCyclic; 
+    }
 
 }
 

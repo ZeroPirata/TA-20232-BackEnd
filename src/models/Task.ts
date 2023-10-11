@@ -7,12 +7,14 @@ import {
     OneToMany,
     JoinColumn,
     ManyToMany,
-    CreateDateColumn
+    CreateDateColumn,
+    JoinTable
 } from "typeorm";
 import { PriorityLevels } from "./PriorityLevels";
 import { User } from "./User";
 import { StatusLevels } from "./StatusLevels";
 import { Subtask } from "./Subtask";
+import { Log } from "./Log";
 
 @Entity({ name: "task" })
 export class Task {
@@ -20,7 +22,7 @@ export class Task {
     @PrimaryGeneratedColumn({
         type: "int",
     })
-    id!: number;
+    id!: number | string;
 
     @Column({
         type: "varchar",
@@ -82,4 +84,7 @@ export class Task {
     @JoinColumn({name: "subtask_id"})
     subtask!: Subtask[];
 
+    @ManyToMany(type => Log, { nullable:true })
+    @JoinTable()
+    logs!: Log[];
 }
