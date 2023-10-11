@@ -5,6 +5,8 @@ import userService from "../services/userService";
 import { TaskUpdateDto } from "../dtos/tasks/taskUpdateDto";
 import { taskRepository } from "../repositories/TaskRepository";
 import { tasktimeUpdateDto } from "../dtos/tasks/tasktimeUpdateDto";
+import taskService from "../services/taskService";
+import logService from "../services/logService";
 
 class TaskController {
   public async createTask(req: Request, res: Response) {
@@ -180,6 +182,46 @@ public async updatetaskTimeSpent(req: Request, res: Response) {
     } else {
       res.status(500).json({ error: "Internal Server Error" });
     }
+  }
+}
+
+public async completeTask(req: Request, res: Response) {
+  try {
+    const id: string = req.params.id; // Receive the ID as a string
+    const isLogId: boolean = id.toUpperCase().includes('TASK'); // Check if the string contains "TASK"
+    let log;
+    let task : any;
+    let result;
+
+    if(isLogId === false){
+      const taskId: number = parseInt(id, 10); // Convert the ID to a number
+      task = await TaskService.getTaskById(taskId);
+
+      if(!task){
+        throw new Error("Task not found");
+      }
+
+      if(taskService.isTaskCyclic(task)){
+        log = await logService.taskToLog(task, true);
+
+        result = await logService.createLogFromTask(true, log)
+      }else{
+        result = await taskService.completeNormalTask(task);
+      }
+
+    }else{
+      log = await logService.findLogByGetterId(id);
+
+      if(log.name == null){
+        throw new Error("Task not found");
+      }
+
+      result = await logService.createLogFromTask(true, log);
+    }
+
+    return res.status(200).json({ message: "Task completed successfully" });
+  } catch (error:any) {
+    return res.status(500).json({ message: error.message });
   }
 }
 
