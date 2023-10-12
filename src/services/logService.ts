@@ -29,8 +29,8 @@ class LogService {
                 cyclicTasks.forEach(async thisTask => {
                     let daysSinceTaskCreation = this.findDateSinceCreation(new Date(), thisTask.createdAt);
                     for (let logIndex = daysSinceTaskCreation; logIndex > 0; logIndex--) {
-                        let log: Log = this.taskToLog(thisTask, true, logIndex);
-                        
+                        let log: Log = this.taskToLog(thisTask, true, -logIndex);
+
                         const isExpired = await this.isThisLogExpired(log);
 
                         let newLog : Log = await this.findLogByGetterId(log.getterIdCode);
@@ -163,22 +163,24 @@ class LogService {
             newLog.description = task.description;
             newLog.subtask = this.subtaskToJson(task.subtask);
             newLog.deadline = task.deadline;
+            newLog.status = task.status;
+            newLog.priority = task.priority;
             if (cleanLog === true) {
-                newLog.status = StatusLevels.TODO;
                 newLog.done = false;
                 newLog.timeSpent = 0;
+                newLog.created_at = new Date();
             } else {
-                newLog.status = task.status;
                 newLog.done = task.done;
                 newLog.timeSpent = task.timeSpent;
+                newLog.created_at = task.createdAt;
             }
             newLog.parentTask = task;
             newLog.parentTask.id = task.id;
-            newLog.created_at = new Date();
-
+            
             if (debugLogDate != null) {
                 newLog.created_at.setDate(task.createdAt.getDate() + debugLogDate);
             }
+
             let daysSinceCreation = this.findDateSinceCreation(newLog.created_at, task.createdAt);
             //Importante para identificação de LOGS, para verificar se um log já existe em X dia
             newLog.daysAfterCreation = daysSinceCreation;
@@ -222,6 +224,7 @@ class LogService {
             if (!log) {
                 return new Log();
             }
+            console.log("SDF: " + JSON.stringify(log));
             return log;
         } catch (error: any) {
             throw new Error(error)
@@ -337,7 +340,21 @@ class LogService {
      */
     public subtaskToJson(subtasks: Subtask[]): string {
         try {
-            const jsonSubtasks = JSON.stringify(subtasks);
+
+
+            let subtask_1 = new Subtask();
+            let subtask_2 = new Subtask();
+            let subtask_3 = new Subtask();
+    
+            subtask_1.id = 5;
+            subtask_2.id = 20;
+            subtask_3.id = 40;
+    
+            let subtasksResult : Subtask[] = [];
+            subtasksResult = [subtask_1, subtask_2, subtask_3];
+
+
+            const jsonSubtasks = JSON.stringify(subtasksResult);
             return jsonSubtasks;
         } catch (error: any) {
             throw new Error(error);

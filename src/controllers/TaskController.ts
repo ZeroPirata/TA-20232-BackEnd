@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import TaskService from "../services/taskService";
-import { Task } from "../models";
+import { Log, Task } from "../models";
 import userService from "../services/userService";
 import { TaskUpdateDto } from "../dtos/tasks/taskUpdateDto";
 import { taskRepository } from "../repositories/TaskRepository";
@@ -53,13 +53,14 @@ public async getTasksByUserId(req: Request, res: Response) {
   try {
       const userId = parseInt(req.params.userId, 10);
       
-      const cyclicTasks = await TaskService.getTasksByUserId(userId);
+      const cyclicTasks : Task[] = await TaskService.getTasksByUserId(userId);
+      const tasks = cyclicTasks.filter(task => task.customInterval !== 0);
 
-      if (!Array.isArray(cyclicTasks) || cyclicTasks.length === 0) {
-          return res.status(404).json({ error: "No cyclic tasks found for this user" });
+      if (!Array.isArray(tasks) || tasks.length === 0) {
+          return res.status(404).json({ error: "No tasks found for this user" });
       }
 
-      res.status(200).json({ message: "Cyclic tasks found for user", data: cyclicTasks });
+      res.status(200).json({ message: "Cyclic tasks found for user", data: tasks });
   } catch (error: any) {
       if (error.message === "User not found") {
           res.status(404).json({ error: "User not found" });
@@ -135,7 +136,7 @@ public async getTaskById(req: Request, res: Response){
       }
     }
   }
-
+  
   public async getExpiredTasks(req: Request, res: Response) {
     const { id, date } = req.params;
     const userId = parseInt(id, 10);
@@ -160,7 +161,7 @@ public async getTaskById(req: Request, res: Response){
     }
     
   }
-
+  
   public async getTimeSpentByMonth(req: Request, res: Response) {
     const { id, month } = req.params;
     const userId = parseInt(id, 10);
@@ -180,7 +181,7 @@ public async getTaskById(req: Request, res: Response){
       }
     }
   }
-
+  
   public async getTimeSpentMonthly(req: Request, res: Response) {
     const { id, year } = req.params;
     const userId = parseInt(id, 10);
@@ -201,22 +202,31 @@ public async getTaskById(req: Request, res: Response){
     }
   }
   
-
+  
   public async updateTask(req: Request, res: Response) {
 
     const { id } = req.params;
-    const userId = parseInt(id, 10);
+    const isLog: boolean = id.toUpperCase().includes('TASK'); 
     
-    if (isNaN(userId)) {
-      return res.status(400).json({message:"parameter 'id' is not a valid number"})
-    }
-
     try {
       let taskUpdate : TaskUpdateDto = req.body;
       let task = taskRepository.create(taskUpdate);
-      task.id = parseInt(id, 10);
+      
+      if(isLog){
+        let log : Log = logService.taskToLog(task, false);
+        let originalLog : Log = await logService.findLogByGetterId(id);
 
-      await taskRepository.save(task);
+        let originalTask : Task = originalLog.parentTask;
+        log.parentTask = originalTask;
+        log.getterIdCode = id;
+        log.id = originalLog.id;
+
+        await logService.saveLog(log);
+      }else{
+        task.id = parseInt(id, 10);
+        await taskRepository.save(task);
+      }
+
       return res.status(200).json({ message: "Task updated successfully", data: task });
   }
 
@@ -224,11 +234,12 @@ public async getTaskById(req: Request, res: Response){
       if (error.message === "Task not found") {
         res.status(404).json({ error: "Task not found" });
       } else {
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: "Internal Server Error", data: JSON.stringify(error)});
       }
     }
 }
 
+  
 public async updatetaskTimeSpent(req: Request, res: Response) {
   
   const { id } = req.params;
@@ -295,7 +306,7 @@ public async completeTask(req: Request, res: Response) {
     return res.status(500).json({ message: error.message });
   }
 }
-
+  
   public async deleteTask(req: Request, res: Response) {
 
     const { id } = req.params;

@@ -74,7 +74,7 @@ class TaskService {
 
     public async getTimeSpentByMonth(userId: number, month: number) {
         try {
-            const tasks: Task[] = await this.taskRepository
+            let tasks: Task[] = await this.taskRepository
                 .createQueryBuilder("task")
                 .where("task.userId = :userId", { userId })
                 .andWhere("MONTH(task.deadline) = :month", { month })
@@ -267,7 +267,7 @@ class TaskService {
         }
 
     }
-    public async getTasksByUserId(userId: number) {
+    public async getTasksByUserId(userId: number): Promise<Task[]> {
 
         try {
             let allTasks = await this.taskRepository
@@ -281,6 +281,7 @@ class TaskService {
 
             const result: Task[] = [];
             for (const task of allTasks) {
+                result.push(task);
                 if (this.isTaskCyclic(task)) {
                     const logs: Log[] = await logService.getAllLogsByTaskId(task.id);
 
@@ -292,10 +293,9 @@ class TaskService {
                     result.push(task);
                 }
             }
-
             return result;
-        } catch (error) {
-            return error;
+        } catch (error: any) {
+            throw new Error(error);
         }
     }
 }

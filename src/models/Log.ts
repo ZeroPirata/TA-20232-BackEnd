@@ -46,6 +46,13 @@ export class Log {
     })
     status!: StatusLevels;
 
+    @Column({
+        type: "enum",
+        enum: PriorityLevels,
+        default: PriorityLevels.LOW,
+    })
+    priority!: PriorityLevels;
+
     @Column()
     done!: boolean
 
@@ -54,7 +61,8 @@ export class Log {
     })
     timeSpent!: number;
 
-    @CreateDateColumn({
+    @Column({
+        type: 'date',
         name: 'created_at'
     })
     created_at!: Date;
