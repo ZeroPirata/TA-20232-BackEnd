@@ -80,7 +80,7 @@ export class Task {
     @ManyToOne(() => User, (user) => user.tasks)
     userId!: number;
 
-    @ManyToMany(() => Subtask, (subtask) => subtask.task)
+    @ManyToMany(() => Subtask, ( subtask) => subtask.task, { onDelete: "CASCADE" })
     @JoinColumn({name: "subtask_id"})
     subtask!: Subtask[];
 

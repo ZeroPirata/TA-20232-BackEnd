@@ -24,7 +24,7 @@ export class Subtask {
     })
     done!: boolean;
 
-    @ManyToOne(() => Task, (task) => task.subtask)
+    @ManyToOne(() => Task, (task) => task.subtask, { onDelete: "CASCADE" })
     @JoinColumn({name: "task_id"})
     task!: Task;
 
