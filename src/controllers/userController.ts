@@ -108,7 +108,7 @@ class UserController {
     }
 
     public async updateUser(req: Request, res: Response) {
-        const { id } = req.params;
+    const { id } = req.params;
     const userId = parseInt(id, 10);
 
     if (isNaN(userId)) {
@@ -146,7 +146,7 @@ class UserController {
         if (userUpdate.email) {
             userExists.email = userUpdate.email;
         }
-        if (userUpdate.password) {
+        if (userUpdate.password && userUpdate.password !== userExists.password) {
             const encodedPassword: string = await userService.EncodePassword(userUpdate.password);
             userExists.password = encodedPassword;
         }
