@@ -267,41 +267,19 @@ public async updatetaskTimeSpent(req: Request, res: Response) {
   }
 }
 
-public async completeTask(req: Request, res: Response) {
+public async repeatTask(req: Request, res: Response) {
   try {
-    const id: string = req.params.id; // Receive the ID as a string
-    const isLogId: boolean = id.toUpperCase().includes('TASK'); // Check if the string contains "TASK"
-    let log;
-    let task : any;
-    let result;
+   let id = req.params.id;
+  
+   const taskId = parseInt(id, 10);
+   if(!taskId){
+      return res.status(400).json({ message: "parameter 'id' is not a valid number or not exists" });
+   }
 
-    if(isLogId === false){
-      const taskId: number = parseInt(id, 10); // Convert the ID to a number
-      task = await TaskService.getTaskById(taskId);
-
-      if(!task){
-        throw new Error("Task not found");
-      }
-
-      if(taskService.isTaskCyclic(task)){
-        log = await logService.taskToLog(task, true);
-
-        result = await logService.createLogFromTask(true, log)
-      }else{
-        result = await taskService.completeNormalTask(task);
-      }
-
-    }else{
-      log = await logService.findLogByGetterId(id);
-
-      if(log.name == null){
-        throw new Error("Task not found");
-      }
-
-      result = await logService.createLogFromTask(true, log);
-    }
-
-    return res.status(200).json({ message: "Task completed successfully" });
+    await TaskService.cloneTask(taskId);
+    const refreshedTask = await TaskService.refreshTask(taskId);
+    res.status(200).json({ message: "Task repeated successfully", data: refreshedTask });
+    
   } catch (error:any) {
     return res.status(500).json({ message: error.message });
   }

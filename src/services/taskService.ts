@@ -1,13 +1,19 @@
 import { Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
-import { Log, Task } from "../models";
+import { Log, Subtask, Task } from "../models";
+import mongoose from "mongoose";
+import subtaskService, { SubtaskService } from "./subtaskService";
 import logService from "./logService";
+import { MongoDataSource } from "../config/mongoConfig";
+import { MongoTask } from "../models/MongoTask";
+import { StatusLevels } from "../models/StatusLevels";
 
 class TaskService {
     private taskRepository: Repository<Task>;
-
+    private mongoTaskRepository: Repository<MongoTask>;
     constructor() {
         this.taskRepository = DataBaseSource.getRepository(Task);
+        this.mongoTaskRepository = MongoDataSource.getMongoRepository(MongoTask);
     }
 
     public async createTask(task: Task) {
@@ -154,6 +160,62 @@ class TaskService {
             }
             return deletedTask;
         } catch (error) {
+            return error;
+        }
+    }
+
+    public async refreshTask(taskId: number){
+        try {
+            const task = await this.taskRepository.findOne({ where: { id: taskId } });
+            if(!task){
+                throw new Error("Task not found");
+            }
+            task.lastExecution = new Date();
+            task.done = false;
+            task.status = StatusLevels.TODO;
+            const updatedTask = await this.taskRepository.update(taskId, task);
+            console.log(updatedTask);
+            if (!updatedTask.affected) {
+                throw new Error("Task not found");
+            }
+            return updatedTask;
+            
+        } catch (error) {
+            return error;
+        }
+    }
+
+    public async cloneTask(taskId: number) {
+        try {
+            const task = await this.taskRepository.findOne({ where: { id: taskId } });
+            if(!task){
+                throw new Error("Task not found");
+            }
+            
+            task.subtask =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
+
+            const newTask = new MongoTask();
+            // Transformando Task em MongoTask
+            newTask.id = new mongoose.Types.ObjectId().toString();
+            newTask.createdAt = task.createdAt;
+            newTask.customInterval = task.customInterval;
+            newTask.deadline = task.deadline;
+            newTask.description = task.description;
+            newTask.done = task.done;
+            newTask.lastExecution = task.lastExecution;
+            newTask.name = task.name;
+            newTask.priority = task.priority;
+            newTask.status = task.status;
+            newTask.subtask = task.subtask;
+            newTask.taskId = task.id;
+            newTask.timeSpent = task.timeSpent;
+            newTask.subtask = task.subtask;
+
+            const createTask = await this.mongoTaskRepository.save(newTask);
+            return createTask;
+
+        } catch (error) {
+            console.log(error);
             return error;
         }
     }

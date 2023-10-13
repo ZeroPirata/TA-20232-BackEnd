@@ -11,7 +11,7 @@ taskRouter.put("/update/:id", TaskController.updateTask);
 taskRouter.put("/updateTime/:id", TaskController.updatetaskTimeSpent);
 taskRouter.delete("/delete/:id", TaskController.deleteTask);
 
-taskRouter.post("/completeTask/:id", TaskController.completeTask);
+taskRouter.get("/repeatTask/:id", TaskController.repeatTask);
 
 taskRouter.get("/getById/:id", TaskController.getTaskById);
 taskRouter.get("/all", TaskController.getAllTasksIncludeLog);
