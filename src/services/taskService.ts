@@ -145,6 +145,30 @@ class TaskService {
         }
     }
 
+    public async getAllCyclicTasks(userId: number){
+        try {
+            const tasks = await this.taskRepository.find({where: {userId: userId}})
+            const cyclicTasks = tasks.filter((task)=>{ return task.customInterval > 0})
+            return cyclicTasks
+        } catch (error) {
+            console.log(error)
+            return []
+        }
+    }
+
+    public async checkTaskToRenew(cyclicTaks: Task[]) {
+        try {
+            const today = moment(new Date()).format("YYYY-MM-DD");
+            const tasksToRenew = cyclicTaks.filter((task) => { return moment(task.lastExecution).add(task.customInterval, "days").format("YYYY-MM-DD") == today });
+            return tasksToRenew;
+        } catch (error) {
+            console.log(error)
+            return []
+        }
+    }
+
+
+
     public async updateTasktimeSpent(id: number, timeSpent: number) {
         try {
             const updatedTask = await this.taskRepository.update(id, { timeSpent });
@@ -196,6 +220,7 @@ class TaskService {
             return error;
         }
     }
+
     public async deleteFutureTask(taskId: number) {
         try {
             const task = await this.taskRepository.findOne({ where: { id: taskId } });
@@ -213,7 +238,6 @@ class TaskService {
             return error;
         }
     }
-    
     
     public async cloneTask(taskId: number) {
         try {
@@ -257,13 +281,13 @@ class TaskService {
             task.subtask =  await subtaskService.getSubtasksByTask(task.id as number) as Subtask[];
 
             let today = moment(task.createdAt);
-            today.add(1, 'day')
             const futureTasks = [];
-
+            console.log(today)
             for (let index = 0; index < 30; index++) {
                 const newTask = new MongoFutureTask();
                 today.add(task.customInterval, 'days').tz('America/Sao_Paulo').format("YYYY-MM-DD");
 
+                // Transformando Task em MongoTask
                 newTask.createdAt = task.createdAt; 
                 newTask.customInterval = task.customInterval;
                 newTask.id = new mongoose.Types.ObjectId().toString();
@@ -287,9 +311,7 @@ class TaskService {
             
             return futureTasks;
             
-
-
-        }catch(error){
+        } catch(error){
             console.log(error);
             return error;
         }

@@ -8,7 +8,7 @@ import {
 import { Task } from "./Task";
 @Entity({name: "subtask"})
 export class Subtask {
-
+ 
     @PrimaryGeneratedColumn({
         type: "int",
     })
