@@ -1,11 +1,10 @@
 import {Request, Response} from "express";
 import * as http from "http";
-import logService from "../services/logService";
 
 class StatusController {
   public async getStatus(req: Request, res: Response) {
     try {
-      // Verifique a conexão do Express
+
       const isExpressListening = checkExpressListening();
 
       if (isExpressListening) {
@@ -17,23 +16,23 @@ class StatusController {
       res.status(500).json("Frontend não deve ser renderizado");
     }
   }
+}
   /**
    * Função responsável por atualização de tempo no banco;
    * Utilizado para criação do LOG de tarefas ciclicas;
    */
-  public async timeUpdate(req: Request, res: Response){
-    try {
-      const { id } = req.params;
-      const userId = parseInt(id, 10); 
-      const checkExpiredLogs = logService.verifyExpiredLogs(userId);
-      console.log("Rodando a task");
+  // public async timeUpdate(req: Request, res: Response){
+  //   try {
+  //     const { id } = req.params;
+  //     const userId = parseInt(id, 10); 
+  //     const checkExpiredLogs = logService.verifyExpiredLogs(userId);
+  //     console.log("Rodando a task");
 
-      res.status(200).json({message:"successful time update", response:JSON.stringify(checkExpiredLogs)});
-    } catch (error) {
-      res.status(500).json({message: "unsuccessful time update", error: error});
-    }
-  }
-}
+  //     res.status(200).json({message:"successful time update", response:JSON.stringify(checkExpiredLogs)});
+  //   } catch (error) {
+  //     res.status(500).json({message: "unsuccessful time update", error: error});
+  //   }
+  // }
 
 export default new StatusController();
 

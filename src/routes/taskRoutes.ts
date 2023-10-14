@@ -10,16 +10,12 @@ taskRouter.get("/getTimeSpentMonthly/:id/:year", TaskController.getTimeSpentMont
 taskRouter.put("/update/:id", TaskController.updateTask);
 taskRouter.put("/updateTime/:id", TaskController.updatetaskTimeSpent);
 taskRouter.delete("/delete/:id", TaskController.deleteTask);
-
-taskRouter.post("/completeTask/:id", TaskController.completeTask);
-
+taskRouter.get("/repeatTask/:id", TaskController.repeatTask);
 taskRouter.get("/getById/:id", TaskController.getTaskById);
-taskRouter.get("/all", TaskController.getAllTasksIncludeLog);
-taskRouter.get("/getAllNonCyclicTasks", TaskController.getAllTasks);
-taskRouter.get("/getNonCyclicTaskByUserId/:userId", TaskController.getNonCyclicTasksByUserId);
+taskRouter.get("/all", TaskController.getAllTasks);
 taskRouter.get("/getByUserId/:userId", TaskController.getTasksByUserId);
-taskRouter.get("/getCyclicTaskByUserId/:userId", TaskController.getOnlyCyclicTasksByUserId);
-taskRouter.get("/getAllCyclicTasks", TaskController.getOnlyCyclicTasks);
+
+
 
 
 export default taskRouter;

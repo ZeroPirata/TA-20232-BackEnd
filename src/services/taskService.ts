@@ -1,19 +1,31 @@
 import { Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
-import { Log, Task } from "../models";
-import logService from "./logService";
+import { Subtask, Task } from "../models";
+import mongoose from "mongoose";
+import subtaskService from "./subtaskService";
+import { MongoDataSource } from "../config/mongoConfig";
+import { MongoTask } from "../models/MongoTask";
+import { StatusLevels } from "../models/StatusLevels";
+import { MongoFutureTask } from "../models/MongoFutureTasks";
+import moment from "moment";
+moment.locale('pt-br');
 
 class TaskService {
     private taskRepository: Repository<Task>;
+    private mongoTaskRepository: Repository<MongoTask>;
+    private mongoFutureTaskRepository: Repository<MongoFutureTask>;
 
     constructor() {
         this.taskRepository = DataBaseSource.getRepository(Task);
+        this.mongoTaskRepository = MongoDataSource.getMongoRepository(MongoTask);
+        this.mongoFutureTaskRepository = MongoDataSource.getMongoRepository(MongoFutureTask);
     }
 
     public async createTask(task: Task) {
         try {
             const newTask = await this.taskRepository.save(task);
-            return newTask;
+            console.log(newTask.id)
+            return newTask.id.toString();
         } catch (error) {
             return error;
         }
@@ -42,21 +54,6 @@ class TaskService {
             return error;
         }
     }
-
-    public async getNonCylicTasksByUserId(userId: number) {
-        try {
-            const tasks = await this.taskRepository
-                .createQueryBuilder("task")
-                .where("task.userId = :userId", { userId })
-                .andWhere("task.customInterval IS NOT NULL AND task.customInterval = 0")
-                .getMany();
-
-            return tasks;
-        } catch (error) {
-            return error;
-        }
-    }
-
 
     public async getExpiredTasks(userId: number, date: string) {
         try {
@@ -158,115 +155,115 @@ class TaskService {
         }
     }
 
-    public async completeNormalTask(task: any) {
+    public async refreshTask(taskId: number){
         try {
-            const updatedTask = await this.taskRepository.update(task.id, { done: true });
-            if (!updatedTask.affected || !task) {
+            const task = await this.taskRepository.findOne({ where: { id: taskId } });
+            if(!task){
+                throw new Error("Task not found");
+            }
+            let subtasks =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
+            subtasks.forEach(subtask => {
+                subtask.done = false;
+                subtaskService.updateSubtask(subtask.id,subtask);
+            });
+
+
+            task.lastExecution = new Date();
+            task.done = false;
+            task.status = StatusLevels.TODO;
+            const updatedTask = await this.taskRepository.update(taskId, task);
+            console.log(updatedTask);
+            if (!updatedTask.affected) {
                 throw new Error("Task not found");
             }
             return updatedTask;
+            
         } catch (error) {
             return error;
         }
     }
 
-    /**
-     * @param task 
-     * @returns Verdadeiro caso a tarefa seja ciclica
-     */
-    public isTaskCyclic(task: Task | any): boolean {
-        const isCyclic = task.customInterval != 0
-        return isCyclic;
-    }
-
-    public async getAllCyclicTasks() {
+    public async cloneTask(taskId: number) {
         try {
-            let allTasks = await this.taskRepository
-                .createQueryBuilder('task')
-                .getMany();
-
-            if (allTasks.length === 0) {
-                throw new Error("tasks not found");
+            const task = await this.taskRepository.findOne({ where: { id: taskId } });
+            if(!task){
+                throw new Error("Task not found");
             }
+            
+            task.subtask =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
 
-            const result: Task[] = [];
-            for (const task of allTasks) {
-                if (this.isTaskCyclic(task)) {
-                    const logs: Log[] = await logService.getAllLogsByTaskId(task.id);
+            const newTask = new MongoTask();
+            // Transformando Task em MongoTask
+            newTask.id = new mongoose.Types.ObjectId().toString();
+            newTask.createdAt = task.createdAt;
+            newTask.customInterval = task.customInterval;
+            newTask.deadline = task.deadline;
+            newTask.description = task.description;
+            newTask.done = task.done;
+            newTask.lastExecution = task.lastExecution;
+            newTask.name = task.name;
+            newTask.priority = task.priority;
+            newTask.status = task.status;
+            newTask.subtask = task.subtask;
+            newTask.taskId = task.id;
+            newTask.timeSpent = task.timeSpent;
+            newTask.subtask = task.subtask;
 
-                    for (const thisLog of logs) {
-                        const thisTask: Task = await logService.logToTask(thisLog, task.userId);
-                        result.push(thisTask);
-                    }
-                } else {
-                    result.push(task);
-                }
-            }
+            const createTask = await this.mongoTaskRepository.save(newTask);
+            return createTask;
 
-            return result;
         } catch (error) {
+            console.log(error);
             return error;
         }
     }
 
-    public async getAllOnlyCyclicTasks() {
+    public async createFutureTasks(taskId: number) {
         try {
-            let allTasks = await this.taskRepository
-                .createQueryBuilder('task')
-                .getMany();
-
-            if (allTasks.length === 0) {
-                throw new Error("tasks not found");
+            const task = await this.taskRepository.findOne({ where: { id: taskId } });
+            if(!task){
+                throw new Error("Task not found");
             }
+            console.log(taskId);
+            task.subtask =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
 
-            const result: Task[] = [];
-            for (const task of allTasks) {
-                if (this.isTaskCyclic(task)) {
-                    const logs: Log[] = await logService.getAllLogsByTaskId(task.id);
+            let today = moment(task.createdAt);
+            const futureTasks = [];
 
-                    for (const thisLog of logs) {
-                        const thisTask: Task = await logService.logToTask(thisLog, task.userId);
-                        result.push(thisTask);
-                    }
-                }
-            }
+            for (let index = 0; index < 30; index++) {
+                const newTask = new MongoFutureTask();
+                today.add(task.customInterval, 'days');
+              
+                newTask.createdAt = today.toDate(); 
+                newTask.customInterval = task.customInterval;
+                newTask.id = new mongoose.Types.ObjectId().toString();
+                newTask.deadline = task.deadline;
+                newTask.description = task.description;
+                newTask.done = task.done;
+                newTask.lastExecution = task.lastExecution;
+                newTask.name = task.name;
+                newTask.priority = task.priority;
+                newTask.status = task.status;
+                newTask.subtask = task.subtask;
+                newTask.taskId = task.id;
+                newTask.timeSpent = task.timeSpent;
+            
+                futureTasks.push(newTask);
 
-            return result;
-        } catch (error) {
+            } 
+            
+            await this.mongoFutureTaskRepository.save(futureTasks);
+            
+            return futureTasks;
+            
+
+
+        }catch(error){
+            console.log(error);
             return error;
         }
-
     }
 
-    public async getOnlyCyclicTasksByUserId(userId: number) {
-        try {
-            let allTasks = await this.taskRepository
-                .createQueryBuilder('task')
-                .where("task.userId = :userId", { userId })
-                .getMany();
-
-            if (allTasks.length === 0) {
-                throw new Error("tasks not found");
-            }
-
-            const result: Task[] = [];
-            for (const task of allTasks) {
-                if (this.isTaskCyclic(task)) {
-                    const logs: Log[] = await logService.getAllLogsByTaskId(task.id);
-
-                    for (const thisLog of logs) {
-                        const thisTask: Task = await logService.logToTask(thisLog, task.userId);
-                        result.push(thisTask);
-                    }
-                }
-            }
-
-            return result;
-        } catch (error) {
-            return error;
-        }
-
-    }
     public async getTasksByUserId(userId: number): Promise<Task[]> {
 
         try {
@@ -279,21 +276,8 @@ class TaskService {
                 throw new Error("tasks not found");
             }
 
-            const result: Task[] = [];
-            for (const task of allTasks) {
-                result.push(task);
-                if (this.isTaskCyclic(task)) {
-                    const logs: Log[] = await logService.getAllLogsByTaskId(task.id);
-
-                    for (const thisLog of logs) {
-                        const thisTask: Task = await logService.logToTask(thisLog, task.userId);
-                        result.push(thisTask);
-                    }
-                } else {
-                    result.push(task);
-                }
-            }
-            return result;
+          
+            return allTasks;
         } catch (error: any) {
             throw new Error(error);
         }
