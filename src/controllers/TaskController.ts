@@ -7,17 +7,26 @@ import { taskRepository } from "../repositories/TaskRepository";
 import { tasktimeUpdateDto } from "../dtos/tasks/tasktimeUpdateDto";
 import taskService from "../services/taskService";
 import logService from "../services/logService";
+import { parse } from "path";
 
 class TaskController {
   public async createTask(req: Request, res: Response) {
     try {
       const taskData: Task = req.body; 
       const createdTask = await TaskService.createTask(taskData);
+      
+      
+
+      if(createdTask && taskData.customInterval > 0 ){
+        console.log("Criando tarefas futuras");
+        await TaskService.createFutureTasks(createdTask as number);
+      }
       res.status(200).json({ message: "Task created successfully", data: createdTask });
     } catch (error) {
         res.status(400).json({  error: "Error creating task" });
     }
-}
+
+  }
 
 public async getAllTasks(req: Request, res: Response) {
     try {

@@ -7,19 +7,26 @@ import logService from "./logService";
 import { MongoDataSource } from "../config/mongoConfig";
 import { MongoTask } from "../models/MongoTask";
 import { StatusLevels } from "../models/StatusLevels";
+import { MongoFutureTask } from "../models/MongoFutureTasks";
+import moment from "moment";
+moment.locale('pt-br');
 
 class TaskService {
     private taskRepository: Repository<Task>;
     private mongoTaskRepository: Repository<MongoTask>;
+    private mongoFutureTaskRepository: Repository<MongoFutureTask>;
+
     constructor() {
         this.taskRepository = DataBaseSource.getRepository(Task);
         this.mongoTaskRepository = MongoDataSource.getMongoRepository(MongoTask);
+        this.mongoFutureTaskRepository = MongoDataSource.getMongoRepository(MongoFutureTask);
     }
 
     public async createTask(task: Task) {
         try {
             const newTask = await this.taskRepository.save(task);
-            return newTask;
+            console.log(newTask.id)
+            return newTask.id.toString();
         } catch (error) {
             return error;
         }
@@ -170,6 +177,13 @@ class TaskService {
             if(!task){
                 throw new Error("Task not found");
             }
+            let subtasks =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
+            subtasks.forEach(subtask => {
+                subtask.done = false;
+                subtaskService.updateSubtask(subtask.id,subtask);
+            });
+
+
             task.lastExecution = new Date();
             task.done = false;
             task.status = StatusLevels.TODO;
@@ -215,6 +229,52 @@ class TaskService {
             return createTask;
 
         } catch (error) {
+            console.log(error);
+            return error;
+        }
+    }
+
+    public async createFutureTasks(taskId: number) {
+        try {
+            const task = await this.taskRepository.findOne({ where: { id: taskId } });
+            if(!task){
+                throw new Error("Task not found");
+            }
+            console.log(taskId);
+            task.subtask =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
+
+            let today = moment(task.createdAt);
+            const futureTasks = [];
+
+            for (let index = 0; index < 30; index++) {
+                const newTask = new MongoFutureTask();
+                today.add(task.customInterval, 'days');
+              
+                newTask.createdAt = today.toDate(); 
+                newTask.customInterval = task.customInterval;
+                newTask.id = new mongoose.Types.ObjectId().toString();
+                newTask.deadline = task.deadline;
+                newTask.description = task.description;
+                newTask.done = task.done;
+                newTask.lastExecution = task.lastExecution;
+                newTask.name = task.name;
+                newTask.priority = task.priority;
+                newTask.status = task.status;
+                newTask.subtask = task.subtask;
+                newTask.taskId = task.id;
+                newTask.timeSpent = task.timeSpent;
+            
+                futureTasks.push(newTask);
+
+            } 
+            
+            await this.mongoFutureTaskRepository.save(futureTasks);
+            
+            return futureTasks;
+            
+
+
+        }catch(error){
             console.log(error);
             return error;
         }

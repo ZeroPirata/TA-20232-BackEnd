@@ -1,7 +1,8 @@
 import { DataSource} from 'typeorm';
 import { MongoTask } from '../models/MongoTask';
+import { MongoFutureTask } from '../models/MongoFutureTasks';
 
-const entidades = [MongoTask];
+const entidades = [MongoTask, MongoFutureTask];
 
 export const MongoDataSource = new DataSource({
             type: "mongodb",
