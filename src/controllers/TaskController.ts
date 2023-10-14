@@ -18,7 +18,7 @@ class TaskController {
 
       if(createdTask && taskData.customInterval > 0 ){
         console.log("Criando tarefas futuras");
-        await TaskService.createFutureTasks(createdTask as number);
+        await TaskService.createFutureTasks(createdTask as Task);
       }
       res.status(200).json({ message: "Task created successfully", data: createdTask });
     } catch (error) {
@@ -206,6 +206,7 @@ public async repeatTask(req: Request, res: Response) {
    }
 
     await TaskService.cloneTask(taskId);
+    await TaskService.deleteFutureTask(taskId);
     const refreshedTask = await TaskService.refreshTask(taskId);
     res.status(200).json({ message: "Task repeated successfully", data: refreshedTask });
     

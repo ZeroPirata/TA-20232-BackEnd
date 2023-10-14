@@ -1,14 +1,14 @@
 import { Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
-import { Subtask, Task } from "../models";
+import { Subtask, Task, User } from "../models";
 import mongoose from "mongoose";
 import subtaskService from "./subtaskService";
 import { MongoDataSource } from "../config/mongoConfig";
 import { MongoTask } from "../models/MongoTask";
 import { StatusLevels } from "../models/StatusLevels";
 import { MongoFutureTask } from "../models/MongoFutureTasks";
-import moment from "moment";
-moment.locale('pt-br');
+import moment from "moment-timezone";
+import { create } from "domain";
 
 class TaskService {
     private taskRepository: Repository<Task>;
@@ -24,8 +24,7 @@ class TaskService {
     public async createTask(task: Task) {
         try {
             const newTask = await this.taskRepository.save(task);
-            console.log(newTask.id)
-            return newTask.id.toString();
+            return newTask;
         } catch (error) {
             return error;
         }
@@ -57,14 +56,18 @@ class TaskService {
 
     public async getExpiredTasks(userId: number, date: string) {
         try {
-            const tasks: Task[] = await this.taskRepository
+            let tasks: any = []
+            tasks = await this.taskRepository
                 .createQueryBuilder("task")
                 .where("task.userId = :userId", { userId })
                 .andWhere("task.deadline = :date", { date })
                 .getMany();
-
+            const pastCycleTasks = await this.mongoTaskRepository.find({ where: { userId: userId, deadline: date } });
+            const futureCycleTasks = await this.mongoFutureTaskRepository.find({where: {userId: userId, deadline: date}});
+            tasks = [...tasks, ...pastCycleTasks, ...futureCycleTasks]
             return tasks;
         } catch (error) {
+            console.log(error)
             return error;
         }
     }
@@ -171,8 +174,8 @@ class TaskService {
             task.lastExecution = new Date();
             task.done = false;
             task.status = StatusLevels.TODO;
+            task.deadline = moment(new Date()).tz('America/Sao_Paulo').format("YYYY-MM-DD")
             const updatedTask = await this.taskRepository.update(taskId, task);
-            console.log(updatedTask);
             if (!updatedTask.affected) {
                 throw new Error("Task not found");
             }
@@ -182,7 +185,25 @@ class TaskService {
             return error;
         }
     }
-
+    public async deleteFutureTask(taskId: number) {
+        try {
+            const task = await this.taskRepository.findOne({ where: { id: taskId } });
+            if (!task) {
+                throw new Error("Task not found");
+            }
+            
+            const today = moment(new Date()).tz('America/Sao_Paulo')
+            const deletedTask = await this.mongoFutureTaskRepository.delete({ taskId: taskId, deadline: today.format("YYYY-MM-DD") });
+            if (!deletedTask.affected) {
+                throw new Error("Task not found");
+            }
+            return deletedTask;
+        } catch (error) {
+            return error;
+        }
+    }
+    
+    
     public async cloneTask(taskId: number) {
         try {
             const task = await this.taskRepository.findOne({ where: { id: taskId } });
@@ -208,6 +229,7 @@ class TaskService {
             newTask.taskId = task.id;
             newTask.timeSpent = task.timeSpent;
             newTask.subtask = task.subtask;
+            newTask.userId = typeof task.userId === "number"? task.userId: task.userId.id as number;
 
             const createTask = await this.mongoTaskRepository.save(newTask);
             return createTask;
@@ -218,26 +240,23 @@ class TaskService {
         }
     }
 
-    public async createFutureTasks(taskId: number) {
+    public async createFutureTasks(task: Task) {
         try {
-            const task = await this.taskRepository.findOne({ where: { id: taskId } });
-            if(!task){
-                throw new Error("Task not found");
-            }
-            console.log(taskId);
-            task.subtask =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
+       
+            task.subtask =  await subtaskService.getSubtasksByTask(task.id as number) as Subtask[];
 
             let today = moment(task.createdAt);
+            today.add(1, 'day')
             const futureTasks = [];
 
             for (let index = 0; index < 30; index++) {
                 const newTask = new MongoFutureTask();
-                today.add(task.customInterval, 'days');
-              
-                newTask.createdAt = today.toDate(); 
+                today.add(task.customInterval, 'days').tz('America/Sao_Paulo').format("YYYY-MM-DD");
+
+                newTask.createdAt = task.createdAt; 
                 newTask.customInterval = task.customInterval;
                 newTask.id = new mongoose.Types.ObjectId().toString();
-                newTask.deadline = task.deadline;
+                newTask.deadline = today.tz('America/Sao_Paulo').format("YYYY-MM-DD");
                 newTask.description = task.description;
                 newTask.done = task.done;
                 newTask.lastExecution = task.lastExecution;
@@ -247,7 +266,8 @@ class TaskService {
                 newTask.subtask = task.subtask;
                 newTask.taskId = task.id;
                 newTask.timeSpent = task.timeSpent;
-            
+                newTask.userId = task.userId;
+                
                 futureTasks.push(newTask);
 
             } 

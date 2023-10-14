@@ -77,8 +77,8 @@ export class Task {
     @CreateDateColumn({ name: 'created_at'})
     createdAt!: Date;
 
-    @ManyToOne(() => User, (user) => user.tasks)
-    userId!: number;
+    @ManyToOne(() => User, (user) => user.tasks, {eager:true})
+    userId!: any;
 
     @ManyToMany(() => Subtask, ( subtask) => subtask.task, { onDelete: "CASCADE" })
     @JoinColumn({name: "subtask_id"})
