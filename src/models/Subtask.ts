@@ -6,9 +6,9 @@ import {
     JoinColumn
 } from "typeorm";
 import { Task } from "./Task";
-@Entity({name: "subtask"})
-export class Subtask {
- 
+@Entity({name: "subtask"}) 
+export class Subtask { 
+
     @PrimaryGeneratedColumn({
         type: "int",
     })
