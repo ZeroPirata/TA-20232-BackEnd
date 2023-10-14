@@ -62,6 +62,7 @@ class TaskService {
                 .where("task.userId = :userId", { userId })
                 .andWhere("task.deadline = :date", { date })
                 .getMany();
+            tasks = tasks.filter((task: Task) => { return task.customInterval > 0 })
             const pastCycleTasks = await this.mongoTaskRepository.find({ where: { userId: userId, deadline: date } });
             const futureCycleTasks = await this.mongoFutureTaskRepository.find({where: {userId: userId, deadline: date}});
             tasks = [...tasks, ...pastCycleTasks, ...futureCycleTasks]
