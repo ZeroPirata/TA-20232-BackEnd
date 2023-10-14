@@ -1,8 +1,8 @@
 import { Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
-import { Log, Subtask, Task } from "../models";
+import { Subtask, Task } from "../models";
 import mongoose from "mongoose";
-import subtaskService, { SubtaskService } from "./subtaskService";
+import subtaskService from "./subtaskService";
 import { MongoDataSource } from "../config/mongoConfig";
 import { MongoTask } from "../models/MongoTask";
 import { StatusLevels } from "../models/StatusLevels";

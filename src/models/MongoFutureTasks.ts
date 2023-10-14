@@ -1,24 +1,14 @@
 
 import {
     Entity,
-    PrimaryGeneratedColumn,
     Column,
-    ManyToOne,
-    OneToMany,
-    JoinColumn,
-    ManyToMany,
     CreateDateColumn,
-    JoinTable,
-    ObjectId,
     ObjectIdColumn,
     Index
 } from "typeorm";
 import { PriorityLevels } from "./PriorityLevels";
-import { User } from "./User";
 import { StatusLevels } from "./StatusLevels";
 import { Subtask } from "./Subtask";
-import { Log } from "./Log";
-
 @Entity("future_task")
 @Index(["taskId", "userId"])
 export class MongoFutureTask {

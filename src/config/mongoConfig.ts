@@ -1,6 +1,5 @@
 import { DataSource} from 'typeorm';
-import { MongoTask } from '../models/MongoTask';
-import { MongoFutureTask } from '../models/MongoFutureTasks';
+import { MongoFutureTask, MongoTask } from '../models';
 
 const entidades = [MongoTask, MongoFutureTask];
 

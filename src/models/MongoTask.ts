@@ -1,23 +1,14 @@
-
 import {
     Entity,
-    PrimaryGeneratedColumn,
     Column,
-    ManyToOne,
-    OneToMany,
-    JoinColumn,
-    ManyToMany,
     CreateDateColumn,
-    JoinTable,
-    ObjectId,
     ObjectIdColumn,
     Index
 } from "typeorm";
 import { PriorityLevels } from "./PriorityLevels";
-import { User } from "./User";
 import { StatusLevels } from "./StatusLevels";
 import { Subtask } from "./Subtask";
-import { Log } from "./Log";
+
 
 @Entity("task")
 @Index(["taskId", "userId"])
