@@ -8,6 +8,7 @@ import {
 import { PriorityLevels } from "./PriorityLevels";
 import { StatusLevels } from "./StatusLevels";
 import { Subtask } from "./Subtask";
+import { User } from "./User";
 
 
 @Entity("task")
@@ -51,7 +52,7 @@ export class MongoTask {
     createdAt!: Date;
 
     @Column()
-    userId!: number;
+    userId!: number | User;
 
     @Column()
     subtask!: Subtask[];
