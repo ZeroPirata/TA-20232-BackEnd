@@ -122,6 +122,16 @@ class TaskService {
         }
     }
 
+    public async getAllNonCyclicTasks(userId: number){
+        try {
+            const tasks = await this.taskRepository.find({where: {userId: userId}})
+            const nonCyclicTasks = tasks.filter((task)=>{ return task.customInterval === 0})
+            return nonCyclicTasks
+        } catch (error) {
+            return error;
+        }
+    }
+
     public async updateTask(id: number, task: Task) {
         try {
             const updatedTask = await this.taskRepository.update(id, task);

@@ -214,6 +214,19 @@ public async repeatTask(req: Request, res: Response) {
     return res.status(500).json({ message: error.message });
   }
 }
+  public async getAllNonCyclicTasks(req: Request, res: Response){
+    try{
+      let id = req.params.id
+      const userId = parseInt(id, 10)
+      if(!userId){
+        return res.status(400).json({message: "parameter 'id' is not a valid number or not exists"})
+      }
+      const tasks = await TaskService.getAllNonCyclicTasks(userId);
+      res.status(200).json({message: "Found Tasks", data: tasks})
+    }catch(error: any){
+      return res.status(500).json({ message: error.message });
+    }
+  }
   
   public async deleteTask(req: Request, res: Response) {
 
