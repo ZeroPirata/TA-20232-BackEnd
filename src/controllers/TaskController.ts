@@ -14,8 +14,6 @@ class TaskController {
       const taskData: Task = req.body; 
       const createdTask = await TaskService.createTask(taskData);
       
-      
-
       if(createdTask && taskData.customInterval > 0 ){
         console.log("Criando tarefas futuras");
         await TaskService.createFutureTasks(createdTask as Task);
@@ -164,7 +162,7 @@ public async getTaskById(req: Request, res: Response){
         task.id = parseInt(id, 10);
         await taskRepository.save(task);
         
-        if(task.customInterval > 0){
+        if(task.customInterval !== 0){
           await TaskService.updateFutureTasks(task);
         }else{
           await TaskService.deleteAllFutureTasks(task.id as number);
