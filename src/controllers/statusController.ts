@@ -1,10 +1,12 @@
 import {Request, Response} from "express";
 import * as http from "http";
+import taskService from "../services/taskService";
+import { Task } from "../models";
 
 class StatusController {
   public async getStatus(req: Request, res: Response) {
     try {
-      // Verifique a conexão do Express
+
       const isExpressListening = checkExpressListening();
 
       if (isExpressListening) {
@@ -16,7 +18,36 @@ class StatusController {
       res.status(500).json("Frontend não deve ser renderizado");
     }
   }
+
+  public async renewCyclicTasks(req: Request, res: Response) {
+    try {
+      const userId = parseInt(req.params.id);
+      const cyclicTaks: Task[] = await taskService.getAllCyclicTasks(userId) as Task[];
+      if( cyclicTaks.length === 0){
+        return res.status(200).json({message: "No cyclic tasks found for this user"})
+      }
+
+      const tasksToRenew: Task[] = await taskService.checkTaskToRenew(cyclicTaks) as Task[];
+      if(tasksToRenew.length === 0){
+        return res.status(200).json({message: "No tasks to renew"})
+      }
+      
+      let refreshedTask =  tasksToRenew.forEach(async (task) => {
+        await taskService.cloneTask(task.id as number);
+        await taskService.deleteFutureTask(task.id as number);
+        return await taskService.refreshTask(task.id as number);
+        
+      });
+      res.status(200).json({message: "Tasks renewed successfully", data: refreshedTask})
+
+    } catch (error) {
+      
+    }
+
+
+  }
 }
+  
 
 export default new StatusController();
 

@@ -2,7 +2,7 @@ import { Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
 import { Subtask } from "../models";
 
-class SubtaskService {
+export class SubtaskService {
     private subtaskRepository: Repository<Subtask>;
 
     constructor() {
@@ -18,12 +18,12 @@ class SubtaskService {
         }
     }
 
-    public async getSubtasksByTask(taskId: number) {
+    public async getSubtasksByTask(taskId: number): Promise<Subtask[] | Error> {
         try {
             const subtasks = await this.subtaskRepository.find({ where: { task: { id: taskId } } });
             return subtasks;
         } catch (error) {
-            return error;
+            return error as Error;
         }
     }
 

@@ -6,8 +6,8 @@ import {
     JoinColumn
 } from "typeorm";
 import { Task } from "./Task";
-@Entity({name: "subtask"})
-export class Subtask {
+@Entity({name: "subtask"}) 
+export class Subtask { 
 
     @PrimaryGeneratedColumn({
         type: "int",
@@ -24,7 +24,7 @@ export class Subtask {
     })
     done!: boolean;
 
-    @ManyToOne(() => Task, (task) => task.subtask)
+    @ManyToOne(() => Task, (task) => task.subtask, { onDelete: "CASCADE" })
     @JoinColumn({name: "task_id"})
     task!: Task;
 

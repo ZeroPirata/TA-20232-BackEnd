@@ -7,12 +7,14 @@ import {
     OneToMany,
     JoinColumn,
     ManyToMany,
-    CreateDateColumn
+    CreateDateColumn,
+    JoinTable
 } from "typeorm";
 import { PriorityLevels } from "./PriorityLevels";
 import { User } from "./User";
 import { StatusLevels } from "./StatusLevels";
 import { Subtask } from "./Subtask";
+
 
 @Entity({ name: "task" })
 export class Task {
@@ -20,7 +22,7 @@ export class Task {
     @PrimaryGeneratedColumn({
         type: "int",
     })
-    id!: number;
+    id!: number | string;
 
     @Column({
         type: "varchar",
@@ -29,8 +31,10 @@ export class Task {
 
     @Column({
         type: "varchar",
+        nullable: true,
     })
     description!: string;
+
 
     @Column({
         type: "enum",
@@ -55,6 +59,17 @@ export class Task {
     timeSpent!: number;
 
     @Column({
+        type: "int",
+        nullable: true,
+    })
+    customInterval!: number;
+
+    @CreateDateColumn({
+        name: 'last_execution'
+    })
+    lastExecution!: Date; 
+
+    @Column({ 
         type: "date"
     })
     deadline!: string;
@@ -62,11 +77,10 @@ export class Task {
     @CreateDateColumn({ name: 'created_at'})
     createdAt!: Date;
 
+    @ManyToOne(() => User, (user) => user.tasks, {eager:true})
+    userId!: any;
 
-    @ManyToOne(() => User, (user) => user.tasks)
-    userId!: number;
-
-    @ManyToMany(() => Subtask, (subtask) => subtask.task)
+    @ManyToMany(() => Subtask, ( subtask) => subtask.task, { onDelete: "CASCADE" })
     @JoinColumn({name: "subtask_id"})
     subtask!: Subtask[];
 

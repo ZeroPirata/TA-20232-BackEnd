@@ -82,7 +82,6 @@ class UserController {
     public async getAllUsers(req: Request, res: Response) {
         try {
             const users = await userService.getAllUser();
-            console.log(users);
             if (!users) {
                 res.status(404).json({ error: "Users not found" });
             } else {
@@ -93,43 +92,72 @@ class UserController {
         }
     }
 
-    public async updateUser(req: Request, res: Response) {
-        const { id } = req.params;
-        const userId = parseInt(id, 10); 
-    
-        if (isNaN(userId)) {
-            return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
-        } 
-    
-        try {
-            const userExists = await UserRepository.findOneBy({
-                email: req.body.email
-            });
-    
-            if (!userExists)
-                return res.status(400).json({ message: "Usuário não existe no sistema" });
-    
-            if (userExists && userId !== userExists.id)
-                return res.status(400).json({ message: "Email já está sendo utilizado" });
-    
-            if (req.body.oldPassword && !await userService.DecodePassword(req.body.oldPassword, userExists.password))
-                return res.status(400).json({ message: "Senha anterior incorreta" });
-    
-            const userUpdate: UserDto = req.body;
-            const user = UserRepository.create(userUpdate);
-    
-            if (req.body.password) {
-                const encodedPassword: string = await userService.EncodePassword(req.body.password);
-                user.password = encodedPassword;
+    public async getUserById(req: Request, res: Response){
+        try{
+            const userId: number = parseInt(req.params.id, 10);
+            const user = await userService.getUserById(userId);
+            res.status(200).json({ data: user });
+        }catch (error: any){
+            if(error.message === "User not found") {
+                res.status(400).json({error: "User not found"});
+            }else {
+                res.status(500).json({ error: "Internal Server Error"});
             }
-            user.id = userId; 
-    
-            return res.status(200).json(await UserRepository.save(user));
-        } catch (error) {
-            console.log(error);
-            return res.status(400).json({ message: "Erro ao atualizar usuário" });
+
         }
     }
+
+    public async updateUser(req: Request, res: Response) {
+    const { id } = req.params;
+    const userId = parseInt(id, 10);
+
+    if (isNaN(userId)) {
+        return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
+    }
+
+    try {
+        const userExists = await UserRepository.findOneBy({
+            id: userId
+        });
+
+        if (!userExists) {
+            return res.status(400).json({ message: "Usuário não existe no sistema" });
+        }
+
+        if (req.body.email && req.body.email !== userExists.email) {
+
+            const emailInUse = await UserRepository.findOneBy({
+                email: req.body.email
+            });
+            if (emailInUse && emailInUse.id !== userId) {
+                return res.status(400).json({ message: "Email já está sendo utilizado" });
+            }
+        }
+
+        if (req.body.oldPassword && userExists && !await userService.DecodePassword(req.body.oldPassword, userExists.password)) {
+            return res.status(400).json({ message: "Senha anterior incorreta" });
+        }
+
+        const userUpdate: UserDto = req.body;
+
+        if (userUpdate.name) {
+            userExists.name = userUpdate.name;
+        }
+        if (userUpdate.email) {
+            userExists.email = userUpdate.email;
+        }
+        if (userUpdate.password && userUpdate.password !== userExists.password) {
+            const encodedPassword: string = await userService.EncodePassword(userUpdate.password);
+            userExists.password = encodedPassword;
+        }
+
+        await UserRepository.save(userExists);
+
+        return res.status(200).json(userExists);
+    } catch (error) {
+        return res.status(400).json({ message: "Erro ao atualizar usuário" });
+    }
+}
     
     public async deleteUsers(req: Request, res: Response) {
         const { id } = req.params

@@ -41,9 +41,22 @@ class UserService{
         }
       }
 
+      public async getUserById(id: number){
+        try{
+            const user = await this.userRepository.findOneBy({ id : id } );
+            if(!user){
+              throw new Error("User not found");
+            }else{
+              return user;
+            }
+        }catch(error){
+          return error;
+        }
+      }
+
       public async updateUser(userId: number, userData: UserDto) {
         try {
-          const userExists = await UserRepository.findOneBy({ email: userData.email });
+          const userExists = await UserRepository.findOneBy({ id: userId });
     
           if (!userExists) {
             throw new Error("Usuário não existe no sistema");
