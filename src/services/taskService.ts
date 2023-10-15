@@ -124,7 +124,7 @@ class TaskService {
 
     public async getAllNonCyclicTasks(userId: number){
         try {
-            const tasks = await this.taskRepository.find({where: {userId: userId}})
+            const tasks = await this.taskRepository.find({where: { userId: { id: userId } }})
             const nonCyclicTasks = tasks.filter((task)=>{ return task.customInterval === 0})
             return nonCyclicTasks
         } catch (error) {
