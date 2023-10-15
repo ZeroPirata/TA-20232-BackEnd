@@ -7,7 +7,7 @@ import { MongoDataSource } from "../config/mongoConfig";
 import { MongoTask } from "../models/MongoTask";
 import { StatusLevels } from "../models/StatusLevels";
 import { MongoFutureTask } from "../models/MongoFutureTasks";
-import moment from "moment-timezone";
+import moment, { Moment } from "moment-timezone";
 import { create } from "domain";
 
 class TaskService {
@@ -216,6 +216,7 @@ class TaskService {
             task.done = false;
             task.status = StatusLevels.TODO;
             task.deadline = moment(new Date()).tz('America/Sao_Paulo').format("YYYY-MM-DD")
+
             const updatedTask = await this.taskRepository.update(taskId, task);
             if (!updatedTask.affected) {
                 throw new Error("Task not found");
@@ -241,6 +242,19 @@ class TaskService {
             }
             return deletedTask;
         } catch (error) {
+            return error;
+        }
+    }
+
+    public async deleteAllFutureTasks(taskId: number) {
+        try {          
+            const deletedTask = await this.mongoFutureTaskRepository.delete({ taskId: taskId });
+            if (!deletedTask.affected) {
+                throw new Error("Task not found");
+            }
+            return deletedTask;
+        } catch (error) {
+            console.log(error)
             return error;
         }
     }
@@ -283,31 +297,45 @@ class TaskService {
 
     public async createFutureTasks(task: Task) {
         try {
-       
-            task.subtask =  await subtaskService.getSubtasksByTask(task.id as number) as Subtask[];
+            const taskInfo = await this.taskRepository.findOne({ where: { id: task.id } });
+            if(!taskInfo){
+                throw new Error("Task not found");
+            }
+            taskInfo.subtask =  await subtaskService.getSubtasksByTask(taskInfo.id as number) as Subtask[];
 
-            let today = moment(task.createdAt);
+            let createdDate: string| Moment
+            createdDate = moment(taskInfo.createdAt).tz('America/Sao_Paulo').format("YYYY-MM-DD");
+            let today = moment(new Date()).tz('America/Sao_Paulo').format("YYYY-MM-DD");
+
+            if (createdDate != today) {
+                createdDate = moment(new Date());
+
+            }else{
+                createdDate = moment(taskInfo.createdAt)
+            }
+
+
             const futureTasks = [];
-            console.log(today)
+
             for (let index = 0; index < 30; index++) {
                 const newTask = new MongoFutureTask();
-                today.add(task.customInterval, 'days').tz('America/Sao_Paulo').format("YYYY-MM-DD");
+                createdDate.add(taskInfo.customInterval, 'days').tz('America/Sao_Paulo').format("YYYY-MM-DD");
 
                 // Transformando Task em MongoTask
-                newTask.createdAt = task.createdAt; 
-                newTask.customInterval = task.customInterval;
+                newTask.createdAt = taskInfo.createdAt; 
+                newTask.customInterval = taskInfo.customInterval;
                 newTask.id = new mongoose.Types.ObjectId().toString();
-                newTask.deadline = today.tz('America/Sao_Paulo').format("YYYY-MM-DD");
-                newTask.description = task.description;
-                newTask.done = task.done;
-                newTask.lastExecution = task.lastExecution;
-                newTask.name = task.name;
-                newTask.priority = task.priority;
-                newTask.status = task.status;
-                newTask.subtask = task.subtask;
-                newTask.taskId = task.id;
-                newTask.timeSpent = task.timeSpent;
-                newTask.userId = task.userId;
+                newTask.deadline = createdDate.tz('America/Sao_Paulo').format("YYYY-MM-DD");
+                newTask.description = taskInfo.description;
+                newTask.done = taskInfo.done;
+                newTask.lastExecution = taskInfo.lastExecution;
+                newTask.name = taskInfo.name;
+                newTask.priority = taskInfo.priority;
+                newTask.status = StatusLevels.TODO;
+                newTask.subtask = taskInfo.subtask;
+                newTask.taskId = taskInfo.id;
+                newTask.timeSpent = taskInfo.timeSpent;
+                newTask.userId = taskInfo.userId.id? taskInfo.userId.id as number : taskInfo.userId as number;
                 
                 futureTasks.push(newTask);
 
@@ -317,6 +345,17 @@ class TaskService {
             
             return futureTasks;
             
+        } catch(error){
+            console.log(error);
+            return error;
+        }
+    }
+
+    public async updateFutureTasks(task: Task) {
+        try{
+            await this.deleteAllFutureTasks(task.id as number);
+            const futureTasks = await this.createFutureTasks(task);            
+            return futureTasks
         } catch(error){
             console.log(error);
             return error;

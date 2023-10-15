@@ -14,8 +14,6 @@ class TaskController {
       const taskData: Task = req.body; 
       const createdTask = await TaskService.createTask(taskData);
       
-      
-
       if(createdTask && taskData.customInterval > 0 ){
         console.log("Criando tarefas futuras");
         await TaskService.createFutureTasks(createdTask as Task);
@@ -93,6 +91,7 @@ public async getTaskById(req: Request, res: Response){
       if (tasks.recorrente.length === 0 && tasks.naoRecorrente.length === 0) {
         return res.status(404).json({ error: "No tasks found for this user" });
       }
+      tasks.recorrente = [... new Set(tasks.recorrente)]
       res.status(200).json({ message: "Expired tasks found for user", data: tasks });
 
     }catch(error: any){
@@ -146,16 +145,31 @@ public async getTaskById(req: Request, res: Response){
   
   
   public async updateTask(req: Request, res: Response) {
-
     const { id } = req.params;
-
+    const mongoIdRegex = /^[0-9a-fA-F]{24}$/;
     try {
       let taskUpdate : TaskUpdateDto = req.body;
-      let task = taskRepository.create(taskUpdate);
-      task.id = parseInt(id, 10);
-      await taskRepository.save(task);
+
+      if(isNaN(parseInt(id, 10))){
+        if(!mongoIdRegex.test(id)){
+          return res.status(400).json({ error: "Only today's task can be updated." });
+        }else{
+          return res.status(400).json({ error: "ID cannot be null." });
+        }
+      } else {
+
+        let task = taskRepository.create(taskUpdate);
+        task.id = parseInt(id, 10);
+        await taskRepository.save(task);
+        
+        if(task.customInterval !== 0){
+          await TaskService.updateFutureTasks(task);
+        }else{
+          await TaskService.deleteAllFutureTasks(task.id as number);
+        }
+        return res.status(200).json({ message: "Task updated successfully", data: task });
+      }
       
-      return res.status(200).json({ message: "Task updated successfully", data: task });
   }
 
     catch (error: any) {
