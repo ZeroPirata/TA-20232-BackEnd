@@ -54,7 +54,7 @@ class TaskService {
         }
     }
 
-    public async getExpiredTasks(userId: number, date: string) {
+    public async getExpiredTasks(userId: number, date: string): Promise<{ recorrente: any[], naoRecorrente: any[], error?: unknown }> {
         try {
             let tasks: any = []
             tasks = await this.taskRepository
@@ -62,14 +62,15 @@ class TaskService {
                 .where("task.userId = :userId", { userId })
                 .andWhere("task.deadline = :date", { date })
                 .getMany();
-            tasks = tasks.filter((task: Task) => { return task.customInterval > 0 })
+            const recorente = tasks.filter((task: Task) => { return task.customInterval > 0 })
+            const naoRecorente = tasks.filter((task: Task) => { return task.customInterval === 0 })
             const pastCycleTasks = await this.mongoTaskRepository.find({ where: { userId: userId, deadline: date } });
             const futureCycleTasks = await this.mongoFutureTaskRepository.find({where: {userId: userId, deadline: date}});
-            tasks = [...tasks, ...pastCycleTasks, ...futureCycleTasks]
-            return tasks;
+            const retorno = { recorrente: [...recorente, ...pastCycleTasks, ...futureCycleTasks], naoRecorrente: [...naoRecorente] };
+            return retorno
         } catch (error) {
             console.log(error)
-            return error;
+            return { recorrente: [], naoRecorrente: [] };
         }
     }
 
@@ -80,7 +81,6 @@ class TaskService {
                 .where("task.userId = :userId", { userId })
                 .andWhere("MONTH(task.deadline) = :month", { month })
                 .getMany();
-
             let timeSpent = 0;
             tasks.forEach(task => {
                 timeSpent += task.timeSpent;
@@ -182,8 +182,14 @@ class TaskService {
     }
 
     public async deleteTask(id: number) {
+        const mongoFutureTaskRepository = MongoDataSource.getMongoRepository(MongoFutureTask);
+        const mongoTaskRepository = MongoDataSource.getMongoRepository(MongoTask);
+        
         try {
             const deletedTask = await this.taskRepository.delete(id);
+            mongoTaskRepository.deleteMany({ "taskId": id });
+            mongoFutureTaskRepository.deleteMany({ "taskId": id });
+            
             if (!deletedTask.affected) {
                 throw new Error("Task not found");
             }
