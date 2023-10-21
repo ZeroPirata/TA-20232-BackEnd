@@ -23,6 +23,10 @@ class TaskService {
 
     public async createTask(task: Task) {
         try {
+            const user = await DataBaseSource.getRepository(User).findOne({ where: { id: task.userId } });
+            user?.tasks.push(task);
+            if(user){
+            await DataBaseSource.getRepository(User).save(user);}
             const newTask = await this.taskRepository.save(task);
             return newTask;
         } catch (error) {
@@ -125,7 +129,7 @@ class TaskService {
 
     public async getAllNonCyclicTasks(userId: number){
         try {
-            const tasks = await this.taskRepository.find({where: { userId: { id: userId } }})
+            const tasks = await this.taskRepository.find({where: { userId: userId  }})
             const nonCyclicTasks = tasks.filter((task)=>{ return task.customInterval === 0})
             return nonCyclicTasks
         } catch (error) {
@@ -269,6 +273,7 @@ class TaskService {
             task.subtask =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
 
             const newTask = new MongoTask();
+
             // Transformando Task em MongoTask
             newTask.id = new mongoose.Types.ObjectId().toString();
             newTask.createdAt = task.createdAt;
@@ -284,7 +289,8 @@ class TaskService {
             newTask.taskId = task.id;
             newTask.timeSpent = task.timeSpent;
             newTask.subtask = task.subtask;
-            newTask.userId = typeof task.userId === "number"? task.userId: task.userId.id as number;
+            newTask.userId = task.userId;
+            newTask.users = task.users;
 
             const createTask = await this.mongoTaskRepository.save(newTask);
             return createTask;
@@ -335,7 +341,7 @@ class TaskService {
                 newTask.subtask = taskInfo.subtask;
                 newTask.taskId = taskInfo.id;
                 newTask.timeSpent = taskInfo.timeSpent;
-                newTask.userId = taskInfo.userId.id? taskInfo.userId.id as number : taskInfo.userId as number;
+                newTask.userId = taskInfo.userId;
                 
                 futureTasks.push(newTask);
 

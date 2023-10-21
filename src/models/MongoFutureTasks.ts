@@ -50,10 +50,16 @@ export class MongoFutureTask {
     @CreateDateColumn({ name: 'created_at'})
     createdAt!: Date;
 
+    @Column({
+        type: "int",
+    })
+    userId!: number;
+
     @Column()
-    userId!: number | User;
+    users!: User[];
 
     @Column()
     subtask!: Subtask[];
+
 
 }

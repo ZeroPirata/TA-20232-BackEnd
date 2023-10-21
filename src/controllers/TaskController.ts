@@ -151,11 +151,13 @@ public async getTaskById(req: Request, res: Response){
       let taskUpdate : TaskUpdateDto = req.body;
 
       if(isNaN(parseInt(id, 10))){
+
         if(!mongoIdRegex.test(id)){
           return res.status(400).json({ error: "Only today's task can be updated." });
         }else{
           return res.status(400).json({ error: "ID cannot be null." });
         }
+
       } else {
 
         let task = taskRepository.create(taskUpdate);
@@ -167,11 +169,11 @@ public async getTaskById(req: Request, res: Response){
         }else{
           await TaskService.deleteAllFutureTasks(task.id as number);
         }
+        
         return res.status(200).json({ message: "Task updated successfully", data: task });
       }
       
   }
-
     catch (error: any) {
       if (error.message === "Task not found") {
         res.status(404).json({ error: "Task not found" });
