@@ -24,10 +24,8 @@ class TaskService {
     public async createTask(task: Task) {
         try {
             const user = await DataBaseSource.getRepository(User).findOne({ where: { id: task.userId } });
-            user?.tasks.push(task);
-            if(user){
-            await DataBaseSource.getRepository(User).save(user);}
             const newTask = await this.taskRepository.save(task);
+            await DataBaseSource.getRepository("user_task").insert({ "userId": user?.id, "taskId": newTask.id })
             return newTask;
         } catch (error) {
             return error;
