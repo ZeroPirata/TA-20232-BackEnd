@@ -37,6 +37,6 @@ export class User {
 
     @ManyToMany(() => Task, task => task.users)
     @JoinTable({name: "user_task"})
-    tasks!: Task[];
+    tasks!: Task[]
 
 }

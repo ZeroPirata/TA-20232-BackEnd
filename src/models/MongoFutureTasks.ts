@@ -55,8 +55,8 @@ export class MongoFutureTask {
     })
     userId!: number;
 
-    @Column()
-    users!: User[];
+    @Column({default: []})
+    users?: User[] = [];
 
     @Column()
     subtask!: Subtask[];
