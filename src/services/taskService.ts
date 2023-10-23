@@ -23,15 +23,17 @@ class TaskService {
 
     public async createTask(task: Task) {
         try {
-            const user = await DataBaseSource.getRepository(User).findOne({ where: { id: task.userId } });
+            const sharedUserIds: number[] = task.sharedUsersIds || [];
             const newTask = await this.taskRepository.save(task);
-            await DataBaseSource.getRepository("user_task").insert({ "userId": user?.id, "taskId": newTask.id })
+            for (const userId of sharedUserIds) {
+                await DataBaseSource.getRepository("user_task").insert({ "userId": userId, "taskId": newTask.id });
+            }
             return newTask;
         } catch (error) {
             return error;
         }
     }
-
+    
     public async getAllTasks() {
         try {
             const allTasks = await this.taskRepository
@@ -367,23 +369,32 @@ class TaskService {
     }
 
     public async getTasksByUserId(userId: number): Promise<Task[]> {
-
         try {
-            let allTasks = await this.taskRepository
-                .createQueryBuilder('task')
-                .where('task.userId = :userId', { userId })
-                .getMany();
-
-            if (allTasks.length === 0) {
-                throw new Error("tasks not found");
-            }
-
-          
-            return allTasks;
-        } catch (error: any) {
-            throw new Error(error);
+          const tasks = await this.taskRepository
+            .createQueryBuilder('task')
+            .where('task.userId = :userId', { userId })
+            .getMany();
+      
+          return tasks;
+        } catch (error: unknown) {
+          throw new Error(error as string);
         }
     }
+
+    public async getSharedTasksByUserId(userId: number): Promise<Task[]> {
+        try {
+          const tasks = await this.taskRepository
+            .createQueryBuilder('task')
+            .innerJoinAndSelect('task.users', 'user')
+            .where('user.id = :userId', { userId })
+            .getMany();
+    
+          return tasks;
+        } catch (error: unknown) {
+          throw new Error(error as string);
+        }
+      }
+      
 }
 
 export default new TaskService();

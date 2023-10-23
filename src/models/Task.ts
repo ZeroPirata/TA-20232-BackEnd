@@ -82,6 +82,9 @@ export class Task {
     })
     userId!: number;
 
+    @Column("simple-array", { nullable: true })
+    sharedUsersIds!: number[];
+
     @ManyToMany(() => User, (user) => user.tasks, { onDelete: "CASCADE" })
     @JoinColumn({name: "user_task"})
     users!: User[];

@@ -40,6 +40,8 @@ taskRouter.get("/getByUserId/:userId", TaskController.getTasksByUserId,
     // #swagger.tags = ['Task']
 );
 
+taskRouter.get("/getSharedTasksByUserId/:userId", TaskController.getSharedTasksByUserId,)
+
 
 
 
