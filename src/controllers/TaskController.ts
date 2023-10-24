@@ -7,6 +7,8 @@ import { taskRepository } from "../repositories/TaskRepository";
 import { tasktimeUpdateDto } from "../dtos/tasks/tasktimeUpdateDto";
 import taskService from "../services/taskService";
 import { parse } from "path";
+import { UserDto } from "../dtos/users/userUpdateDto";
+import { IHistorico } from "../interfaces/historico";
 
 class TaskController {
   public async createTask(req: Request, res: Response) {
@@ -262,6 +264,22 @@ public async repeatTask(req: Request, res: Response) {
       } else {
         res.status(500).json({ error: "Internal Server Error" });
       }
+    }
+  }
+
+  public async UpdateHistorico(req: Request, res: Response){
+    const idTask: number = parseInt(req.params.idTask, 10);
+    const idUser: number = parseInt(req.params.idUser, 10);
+    try {
+      const user  = await userService.getUserById(idUser);
+      if(!user.email){
+        return res.status(400).json({error: "Usuario não encontrado"})
+      }
+      let taskUpdate: TaskUpdateDto = req.body;
+      const updateTask: IHistorico = await taskService.HistoricEditTask(idTask, taskUpdate, { id: idUser, name: user.name })
+      res.status(200).json(updateTask)
+    } catch (error: any) {
+      console.log(error) 
     }
   }
 }

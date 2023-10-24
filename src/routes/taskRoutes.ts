@@ -39,6 +39,9 @@ taskRouter.get("/all", TaskController.getAllTasks,
 taskRouter.get("/getByUserId/:userId", TaskController.getTasksByUserId,
     // #swagger.tags = ['Task']
 );
+taskRouter.post("/UpdateHistorico/:idTask/:idUser", TaskController.UpdateHistorico,
+    // #swagger.tags = ['Task']
+);
 
 
 
