@@ -50,7 +50,7 @@ class TaskService {
         try {
             const allTasks = await this.taskRepository
                 .createQueryBuilder("task")
-                .where('usertask.user IS NOT NULL')
+                .where('task.sharedUsersIds IS NOT NULL')
                 .getMany();
             return allTasks;
         } catch (error) {
