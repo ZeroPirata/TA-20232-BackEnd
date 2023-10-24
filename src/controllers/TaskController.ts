@@ -22,8 +22,7 @@ class TaskController {
     } catch (error) {
         res.status(400).json({  error: "Error creating task" });
     }
-
-  }
+} 
 
 public async getAllTasks(req: Request, res: Response) {
     try {
@@ -33,6 +32,15 @@ public async getAllTasks(req: Request, res: Response) {
       res.status(400).json({ error: "Tasks not found" });
     }
   }
+
+public async getAllSharedTasks(req: Request, res: Response) {
+  try {
+    const allTasks = await TaskService.getAllSharedTasks();
+    res.status(200).json({ message: "All shared tasks", data: allTasks });
+  } catch (error) {
+    res.status(400).json({ error: "Tasks not found" });
+  }
+ }
 
 public async getTasksByUserId(req: Request, res: Response) {
   try {
