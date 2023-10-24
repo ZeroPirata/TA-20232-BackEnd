@@ -46,6 +46,18 @@ class TaskService {
         }
     }
 
+    public async getAllSharedTasks() {
+        try {
+            const allTasks = await this.taskRepository
+                .createQueryBuilder("task")
+                .where('task.sharedUsersIds IS NOT NULL')
+                .getMany();
+            return allTasks;
+        } catch (error) {
+            return error;
+        }
+    }
+
     public async getTaskById(id: number) {
         try {
             const task = await this.taskRepository.findOne({ where: { id } });
