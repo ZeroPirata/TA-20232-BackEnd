@@ -1,5 +1,8 @@
+import {ObjectId} from "typeorm";
+
 export interface IHistorico {
-  id: number;
+  id?: ObjectId;
+  taskId: number;
   data: string;
   user: {
     id: number;

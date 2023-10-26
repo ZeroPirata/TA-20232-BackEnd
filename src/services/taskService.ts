@@ -400,7 +400,7 @@ class TaskService {
         const mongoHistoricoRepository = MongoDataSource.getMongoRepository(HistoricoTask)
         try {
             let historicoEdit: IHistorico = {
-                id: idTask,
+                taskId: idTask,
                 user,
                 data: new Date().toISOString(),
                 campo: {}
@@ -424,6 +424,17 @@ class TaskService {
             throw new Error(error);
         }
     }
+
+    public async getHistoricEditTask(idTask: number): Promise<IHistorico[]>{
+        const historicTask = MongoDataSource.getMongoRepository(HistoricoTask)
+        try {
+            const findTask = await historicTask.find({ where: { "taskId": { $eq: idTask } }})
+            return findTask;
+        } catch (error: any) {
+            throw new Error(error)
+        }
+    }
+
     public async getSharedTasksByUserId(userId: number): Promise<Task[]> {
         try {
           const tasks = await this.taskRepository
