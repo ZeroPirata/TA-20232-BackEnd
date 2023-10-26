@@ -39,9 +39,16 @@ taskRouter.get("/all", TaskController.getAllTasks,
 taskRouter.get("/getByUserId/:userId", TaskController.getTasksByUserId,
     // #swagger.tags = ['Task']
 );
+<<<<<<< HEAD
 taskRouter.post("/UpdateHistorico/:idTask/:idUser", TaskController.UpdateHistorico,
     // #swagger.tags = ['Task']
 );
+=======
+taskRouter.get("/getAllSharedTasks/", TaskController.getAllSharedTasks,
+);  // #swagger.tags = ['Task']);
+
+taskRouter.get("/getSharedTasksByUserId/:userId", TaskController.getSharedTasksByUserId,)
+>>>>>>> origin/develop
 
 
 

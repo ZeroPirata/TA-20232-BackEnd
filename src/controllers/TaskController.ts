@@ -9,6 +9,7 @@ import taskService from "../services/taskService";
 import { parse } from "path";
 import { UserDto } from "../dtos/users/userUpdateDto";
 import { IHistorico } from "../interfaces/historico";
+import { DataBaseSource } from "../config/database";
 
 class TaskController {
   public async createTask(req: Request, res: Response) {
@@ -24,8 +25,7 @@ class TaskController {
     } catch (error) {
         res.status(400).json({  error: "Error creating task" });
     }
-
-  }
+} 
 
 public async getAllTasks(req: Request, res: Response) {
     try {
@@ -36,26 +36,48 @@ public async getAllTasks(req: Request, res: Response) {
     }
   }
 
-public async getTasksByUserId(req: Request, res: Response) {
+public async getAllSharedTasks(req: Request, res: Response) {
   try {
+    const allTasks = await TaskService.getAllSharedTasks();
+    res.status(200).json({ message: "All shared tasks", data: allTasks });
+  } catch (error) {
+    res.status(400).json({ error: "Tasks not found" });
+  }
+ }
+
+  public async getTasksByUserId(req: Request, res: Response) {
+    try {
       const userId = parseInt(req.params.userId, 10);
       
-      const cyclicTasks : Task[] = await TaskService.getTasksByUserId(userId);
+      const cyclicTasks: Task[] = await TaskService.getTasksByUserId(userId);
       const tasks = cyclicTasks.filter(task => task.customInterval !== 0);
-
-      if (!Array.isArray(tasks) || tasks.length === 0) {
-          return res.status(404).json({ error: "No tasks found for this user" });
+  
+      if (!Array.isArray(cyclicTasks) || cyclicTasks.length === 0) {
+        return res.status(404).json({ error: "No tasks found for this user" });
       }
-
+      res.status(200).json({ message: "Tasks found for user", data: tasks });
       res.status(200).json({ message: "Cyclic tasks found for user", data: tasks });
-  } catch (error: any) {
-      if (error.message === "User not found") {
-          res.status(404).json({ error: "User not found" });
-      } else {
-          res.status(500).json({ error: "Internal Server Error" });
-      }
+    } catch (error: any) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
   }
-}
+  
+  public async getSharedTasksByUserId(req: Request, res: Response) {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+
+      const sharedTasks = await taskService.getSharedTasksByUserId(userId);
+
+      if (!Array.isArray(sharedTasks) || sharedTasks.length === 0) {
+        return res.status(404).json({ error: 'No shared tasks found for this user' });
+      }
+
+      res.status(200).json({ message: 'Shared tasks found for user', data: sharedTasks });
+    } catch (error: any) {
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+  
 
 
 public async getTaskById(req: Request, res: Response){
@@ -150,40 +172,44 @@ public async getTaskById(req: Request, res: Response){
     const { id } = req.params;
     const mongoIdRegex = /^[0-9a-fA-F]{24}$/;
     try {
-      let taskUpdate : TaskUpdateDto = req.body;
+        let taskUpdate: TaskUpdateDto = req.body;
 
-      if(isNaN(parseInt(id, 10))){
+        if (isNaN(parseInt(id, 10))) {
 
-        if(!mongoIdRegex.test(id)){
-          return res.status(400).json({ error: "Only today's task can be updated." });
-        }else{
-          return res.status(400).json({ error: "ID cannot be null." });
+            if (!mongoIdRegex.test(id)) {
+                return res.status(400).json({ error: "Only today's task can be updated." });
+            } else {
+                return res.status(400).json({ error: "ID cannot be null." });
+            }
+
+        } else {
+            let task = taskRepository.create(taskUpdate);
+            task.id = parseInt(id, 10);
+
+            const sharedUserIds = task.sharedUsersIds || [];
+            await taskRepository.save(task);
+
+            for (const userId of sharedUserIds) {
+                await DataBaseSource.getRepository("user_task").insert({ "userId": userId, "taskId": task.id });
+            }
+
+            if (task.customInterval !== 0) {
+                await TaskService.updateFutureTasks(task);
+            } else {
+                await TaskService.deleteAllFutureTasks(task.id as number);
+            }
+
+            return res.status(200).json({ message: "Task updated successfully", data: task });
         }
-
-      } else {
-
-        let task = taskRepository.create(taskUpdate);
-        task.id = parseInt(id, 10);
-        await taskRepository.save(task);
-        
-        if(task.customInterval !== 0){
-          await TaskService.updateFutureTasks(task);
-        }else{
-          await TaskService.deleteAllFutureTasks(task.id as number);
+    } catch (error: any) {
+        if (error.message === "Task not found") {
+            res.status(404).json({ error: "Task not found" });
+        } else {
+            res.status(500).json({ error: "Internal Server Error", data: JSON.stringify(error) });
         }
-        
-        return res.status(200).json({ message: "Task updated successfully", data: task });
-      }
-      
-  }
-    catch (error: any) {
-      if (error.message === "Task not found") {
-        res.status(404).json({ error: "Task not found" });
-      } else {
-        res.status(500).json({ error: "Internal Server Error", data: JSON.stringify(error)});
-      }
     }
 }
+
 
   
 public async updatetaskTimeSpent(req: Request, res: Response) {
