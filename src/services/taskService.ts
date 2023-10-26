@@ -9,6 +9,9 @@ import { StatusLevels } from "../models/StatusLevels";
 import { MongoFutureTask } from "../models/MongoFutureTasks";
 import moment, { Moment } from "moment-timezone";
 import { create } from "domain";
+import { IHistorico } from "../interfaces/historico";
+import { TaskUpdateDto } from "../dtos/tasks/taskUpdateDto";
+import { HistoricoTask } from "../models/MongoHisotirico";
 
 class TaskService {
     private taskRepository: Repository<Task>;
@@ -402,6 +405,34 @@ class TaskService {
         }
     }
 
+    public async HistoricEditTask(idTask: number, taskUpdate: TaskUpdateDto, user: { name: string, id: number }) {
+        const mongoHistoricoRepository = MongoDataSource.getMongoRepository(HistoricoTask)
+        try {
+            let historicoEdit: IHistorico = {
+                id: idTask,
+                user,
+                data: new Date().toISOString(),
+                campo: {}
+            };
+            const fields = ["name", "description", "priority", "status", "done", "customInterval", "lastExecution", "timeSpent", "deadline"];
+            const task = await this.taskRepository.findOne({ where: { id: idTask } });
+            if (task) {
+                for (const field of fields) {
+                    if ((taskUpdate as any)[field] !== undefined && (task as any)[field] !== (taskUpdate as any)[field]) {
+                        historicoEdit.campo[field] = {
+                            old: (task as any)[field],
+                            new: (taskUpdate as any)[field]
+                        };
+                    }
+                }
+                const save = await mongoHistoricoRepository.save(historicoEdit);
+                return save;
+            }
+            return historicoEdit
+        } catch (error: any) {
+            throw new Error(error);
+        }
+    }
     public async getSharedTasksByUserId(userId: number): Promise<Task[]> {
         try {
           const tasks = await this.taskRepository
