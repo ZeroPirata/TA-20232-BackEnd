@@ -197,23 +197,32 @@ class TaskService {
         }
     }
 
-    public async deleteTask(id: number) {
+    public async deleteTask(id: number, userId: number) {
         const mongoFutureTaskRepository = MongoDataSource.getMongoRepository(MongoFutureTask);
         const mongoTaskRepository = MongoDataSource.getMongoRepository(MongoTask);
         
         try {
+            const task = await this.taskRepository.findOne({ where: { id } });
+
+
+            if (!task) {
+                throw new Error("Task not found");
+            }
+    
+            if (task.userId !== userId) {
+                throw new Error("Permission denied. You are not the owner of this task.");
+            }
+    
             const deletedTask = await this.taskRepository.delete(id);
             mongoTaskRepository.deleteMany({ "taskId": id });
             mongoFutureTaskRepository.deleteMany({ "taskId": id });
             
-            if (!deletedTask.affected) {
-                throw new Error("Task not found");
-            }
             return deletedTask;
         } catch (error) {
             return error;
         }
     }
+    
 
     public async refreshTask(taskId: number){
         try {
