@@ -293,6 +293,19 @@ public async repeatTask(req: Request, res: Response) {
     }
   }
 
+  public async getHistoricTaskById(req: Request, res: Response){
+    const id: number = parseInt(req.params.id, 10);
+    try {
+      if(isNaN(id)){
+        res.status(400).json({ error: "Task não encontrada." })
+      }
+      const updateTask: IHistorico[] = await taskService.getHistoricEditTask(id)
+      res.status(200).json(updateTask)
+    } catch (error) {
+      
+    }
+  }
+
   public async UpdateHistorico(req: Request, res: Response){
     const idTask: number = parseInt(req.params.idTask, 10);
     const idUser: number = parseInt(req.params.idUser, 10);
