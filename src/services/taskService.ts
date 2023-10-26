@@ -396,7 +396,6 @@ class TaskService {
         }
     }
 
-<<<<<<< HEAD
     public async HistoricEditTask(idTask: number, taskUpdate: TaskUpdateDto, user: { name: string, id: number }) {
         const mongoHistoricoRepository = MongoDataSource.getMongoRepository(HistoricoTask)
         try {
@@ -425,7 +424,6 @@ class TaskService {
             throw new Error(error);
         }
     }
-=======
     public async getSharedTasksByUserId(userId: number): Promise<Task[]> {
         try {
           const tasks = await this.taskRepository
@@ -440,7 +438,6 @@ class TaskService {
         }
       }
       
->>>>>>> origin/develop
 }
 
 export default new TaskService();
