@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { MongoRepository, Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
 import { Subtask, Task, User } from "../models";
 import mongoose from "mongoose";
@@ -17,11 +17,13 @@ class TaskService {
     private taskRepository: Repository<Task>;
     private mongoTaskRepository: Repository<MongoTask>;
     private mongoFutureTaskRepository: Repository<MongoFutureTask>;
+    private mongoHistoricoRepository: MongoRepository<HistoricoTask>;
 
     constructor() {
         this.taskRepository = DataBaseSource.getRepository(Task);
         this.mongoTaskRepository = MongoDataSource.getMongoRepository(MongoTask);
         this.mongoFutureTaskRepository = MongoDataSource.getMongoRepository(MongoFutureTask);
+        this.mongoHistoricoRepository = MongoDataSource.getMongoRepository(HistoricoTask);
     }
 
     public async createTask(task: Task) {
@@ -402,7 +404,6 @@ class TaskService {
     }
 
     public async HistoricEditTask(idTask: number, taskUpdate: TaskUpdateDto, user: { name: string, id: number }) {
-        const mongoHistoricoRepository = MongoDataSource.getMongoRepository(HistoricoTask)
         try {
             let historicoEdit: IHistorico = {
                 taskId: idTask,
@@ -421,7 +422,7 @@ class TaskService {
                         };
                     }
                 }
-                const save = await mongoHistoricoRepository.save(historicoEdit);
+                const save = await this.mongoHistoricoRepository.save(historicoEdit);
                 return save;
             }
             return historicoEdit
@@ -431,9 +432,8 @@ class TaskService {
     }
 
     public async getHistoricEditTask(idTask: number): Promise<IDataHisotiro>{
-        const historicTask = MongoDataSource.getMongoRepository(HistoricoTask)
         try {
-            const findTask = await historicTask.find({ where: { "taskId": { $eq: idTask } }})
+            const findTask = await this.mongoHistoricoRepository.find({ where: { "taskId": { $eq: idTask } }})
             const grupoDatas: IDataHisotiro = {};
             findTask.forEach((objeto) => {
                 const data = objeto.data.slice(0, 10);
@@ -449,9 +449,8 @@ class TaskService {
     }
 
     public async getHistoricTaskByUser(idUser: number): Promise<IHistorico[]>{
-        const mongoHistoricoRepository = MongoDataSource.getMongoRepository(HistoricoTask)
         try {
-            const search = await mongoHistoricoRepository.find({ where: { "user.id": { $eq: idUser }}})
+            const search = await this.mongoHistoricoRepository.find({ where: { "user.id": { $eq: idUser }}})
             search.sort((a: IHistorico, b: IHistorico) => {
                 const dataA = new Date(a.data).getTime();
                 const dataB = new Date(b.data).getTime();
