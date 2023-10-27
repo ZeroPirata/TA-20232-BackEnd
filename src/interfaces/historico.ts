@@ -15,3 +15,7 @@ export interface IHistorico {
     };
   };
 }
+
+export interface IDataHisotiro {
+  [data: string]: IHistorico[];
+}
