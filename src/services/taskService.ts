@@ -9,7 +9,7 @@ import { StatusLevels } from "../models/StatusLevels";
 import { MongoFutureTask } from "../models/MongoFutureTasks";
 import moment, { Moment } from "moment-timezone";
 import { create } from "domain";
-import { IHistorico } from "../interfaces/historico";
+import { IDataHisotiro, IHistorico } from "../interfaces/historico";
 import { TaskUpdateDto } from "../dtos/tasks/taskUpdateDto";
 import { HistoricoTask } from "../models/MongoHisotirico";
 
@@ -430,11 +430,34 @@ class TaskService {
         }
     }
 
-    public async getHistoricEditTask(idTask: number): Promise<IHistorico[]>{
+    public async getHistoricEditTask(idTask: number): Promise<IDataHisotiro>{
         const historicTask = MongoDataSource.getMongoRepository(HistoricoTask)
         try {
             const findTask = await historicTask.find({ where: { "taskId": { $eq: idTask } }})
-            return findTask;
+            const grupoDatas: IDataHisotiro = {};
+            findTask.forEach((objeto) => {
+                const data = objeto.data.slice(0, 10);
+                if (!grupoDatas[data]) {
+                    grupoDatas[data] = [];
+                }
+                grupoDatas[data].push(objeto);
+            });
+            return grupoDatas;
+        } catch (error: any) {
+            throw new Error(error)
+        }
+    }
+
+    public async getHistoricTaskByUser(idUser: number): Promise<IHistorico[]>{
+        const mongoHistoricoRepository = MongoDataSource.getMongoRepository(HistoricoTask)
+        try {
+            const search = await mongoHistoricoRepository.find({ where: { "user.id": { $eq: idUser }}})
+            search.sort((a: IHistorico, b: IHistorico) => {
+                const dataA = new Date(a.data).getTime();
+                const dataB = new Date(b.data).getTime();
+                return dataB - dataA;
+              });
+            return search
         } catch (error: any) {
             throw new Error(error)
         }

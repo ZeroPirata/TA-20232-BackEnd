@@ -8,7 +8,7 @@ import { tasktimeUpdateDto } from "../dtos/tasks/tasktimeUpdateDto";
 import taskService from "../services/taskService";
 import { parse } from "path";
 import { UserDto } from "../dtos/users/userUpdateDto";
-import { IHistorico } from "../interfaces/historico";
+import { IDataHisotiro, IHistorico } from "../interfaces/historico";
 import { DataBaseSource } from "../config/database";
 
 class TaskController {
@@ -299,10 +299,23 @@ public async repeatTask(req: Request, res: Response) {
       if(isNaN(id)){
         res.status(400).json({ error: "Task não encontrada." })
       }
-      const updateTask: IHistorico[] = await taskService.getHistoricEditTask(id)
+      const updateTask: IDataHisotiro = await taskService.getHistoricEditTask(id)
       res.status(200).json(updateTask)
-    } catch (error) {
-      
+    } catch (error: any) {
+      res.status(500).json(error)
+    }
+  }
+
+  public async getHistoricTaskByUser(req: Request, res: Response){
+    const idUser: number = parseInt(req.params.idUser, 10);
+    try {
+      if(isNaN(idUser)){
+        return res.status(400).json({ error: "Algo deu errado ao buscar um parâmetro." })
+      }
+      const searchedTasks: IHistorico[] = await taskService.getHistoricTaskByUser(idUser)
+      res.status(200).json(searchedTasks)
+    } catch (error: any) {
+      res.status(500).json(error)
     }
   }
 
@@ -318,7 +331,7 @@ public async repeatTask(req: Request, res: Response) {
       const updateTask: IHistorico = await taskService.HistoricEditTask(idTask, taskUpdate, { id: idUser, name: user.name })
       res.status(200).json(updateTask)
     } catch (error: any) {
-      console.log(error) 
+      res.status(500).json(error)
     }
   }
 }
