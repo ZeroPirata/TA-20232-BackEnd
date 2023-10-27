@@ -144,7 +144,12 @@ class TaskService {
 
     public async getAllNonCyclicTasks(userId: number){
         try {
-            const tasks = await this.taskRepository.find({where: { userId: userId  }})
+            const tasks = await this.taskRepository
+            .createQueryBuilder("task")
+            .leftJoinAndSelect("task.users", "users")
+            .addSelect(["users.email"])
+            .where("task.userId = :userId", {userId })
+            .getMany();
             const nonCyclicTasks = tasks.filter((task)=>{ return task.customInterval === 0})
             return nonCyclicTasks
         } catch (error) {
