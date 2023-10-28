@@ -448,15 +448,26 @@ class TaskService {
         }
     }
 
-    public async getHistoricTaskByUser(idUser: number): Promise<IHistorico[]>{
+    public async getHistoricTaskByUser(idUser: number): Promise<IDynamicKeyData>{
         try {
-            const search = await this.mongoHistoricoRepository.find({ where: { "user.id": { $eq: idUser }}})
-            search.sort((a: IHistorico, b: IHistorico) => {
+            const tasks = await this.taskRepository.findBy({ userId: idUser });
+            const search = await this.mongoHistoricoRepository.find({ where: { "user.id": { $eq: idUser } } });
+            const taskIdsSet = new Set(tasks.map(task => task.id));
+            const filteredSearch = search.filter(mongoTask => !taskIdsSet.has(mongoTask.taskId));
+            filteredSearch.sort((a: IHistorico, b: IHistorico) => {
                 const dataA = new Date(a.data).getTime();
                 const dataB = new Date(b.data).getTime();
                 return dataB - dataA;
-              });
-            return search
+            });
+            const grupoDatas: IDynamicKeyData = {};
+            filteredSearch.forEach(task => {
+                const data = task.data.slice(0, 10);
+                if (!grupoDatas[data]) {
+                    grupoDatas[data] = [];
+                }
+                grupoDatas[data].push(task);
+            });
+            return grupoDatas;
         } catch (error: any) {
             throw new Error(error)
         }

@@ -312,7 +312,7 @@ public async repeatTask(req: Request, res: Response) {
       if(isNaN(idUser)){
         return res.status(400).json({ error: "Algo deu errado ao buscar um parâmetro." })
       }
-      const searchedTasks: IHistorico[] = await taskService.getHistoricTaskByUser(idUser)
+      const searchedTasks: IDynamicKeyData = await taskService.getHistoricTaskByUser(idUser)
       res.status(200).json(searchedTasks)
     } catch (error: any) {
       res.status(500).json(error)
