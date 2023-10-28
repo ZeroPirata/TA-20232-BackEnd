@@ -16,6 +16,6 @@ export interface IHistorico {
   };
 }
 
-export interface IDataHisotiro {
+export interface IDynamicKeyData {
   [data: string]: IHistorico[];
 }
