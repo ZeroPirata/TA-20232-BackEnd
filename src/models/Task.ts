@@ -22,7 +22,7 @@ export class Task {
     @PrimaryGeneratedColumn({
         type: "int",
     })
-    id!: number | string;
+    id!: number;
 
     @Column({
         type: "varchar",

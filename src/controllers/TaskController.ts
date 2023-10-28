@@ -8,7 +8,7 @@ import { tasktimeUpdateDto } from "../dtos/tasks/tasktimeUpdateDto";
 import taskService from "../services/taskService";
 import { parse } from "path";
 import { UserDto } from "../dtos/users/userUpdateDto";
-import { IDataHisotiro, IHistorico } from "../interfaces/historico";
+import { IDynamicKeyData, IHistorico } from "../interfaces/historico";
 import { DataBaseSource } from "../config/database";
 
 class TaskController {
@@ -297,9 +297,9 @@ public async repeatTask(req: Request, res: Response) {
     const id: number = parseInt(req.params.id, 10);
     try {
       if(isNaN(id)){
-        res.status(400).json({ error: "Task não encontrada." })
+        return res.status(400).json({ error: "Algo deu errado ao buscar um parâmetro." })
       }
-      const updateTask: IDataHisotiro = await taskService.getHistoricEditTask(id)
+      const updateTask: IDynamicKeyData = await taskService.getHistoricEditTask(id)
       res.status(200).json(updateTask)
     } catch (error: any) {
       res.status(500).json(error)
@@ -317,6 +317,19 @@ public async repeatTask(req: Request, res: Response) {
     } catch (error: any) {
       res.status(500).json(error)
     }
+  }
+
+  public async getHisotricTaskByOwner(req: Request, res:Response){
+      const idUser: number = parseInt(req.params.idUser, 10)
+      try {
+        if(isNaN(idUser)){
+          return res.status(400).json({ error: "Algo deu errado ao buscar um parâmetro." })
+        }
+        const searchOwner = await taskService.getHistoricTaskByOwner(idUser)
+        res.json(searchOwner)
+      } catch (error) {
+        
+      }
   }
 
   public async UpdateHistorico(req: Request, res: Response){

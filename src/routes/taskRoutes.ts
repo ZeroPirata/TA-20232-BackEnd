@@ -51,6 +51,9 @@ taskRouter.get("/getHistoricTask/:id", TaskController.getHistoricTaskById,
 taskRouter.get("/getHistoricTaskByUser/:idUser", TaskController.getHistoricTaskByUser,
     // #swagger.tags = ['Task']
 )
+taskRouter.get("/getHisotricTaskByOwner/:idUser", TaskController.getHisotricTaskByOwner,
+    // #swagger.tags = ['Task']
+)
 taskRouter.get("/getSharedTasksByUserId/:userId", TaskController.getSharedTasksByUserId,
     // #swagger.tags = ['Task']
 )

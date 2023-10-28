@@ -9,7 +9,7 @@ import { StatusLevels } from "../models/StatusLevels";
 import { MongoFutureTask } from "../models/MongoFutureTasks";
 import moment, { Moment } from "moment-timezone";
 import { create } from "domain";
-import { IDataHisotiro, IHistorico } from "../interfaces/historico";
+import { IDynamicKeyData, IHistorico } from "../interfaces/historico";
 import { TaskUpdateDto } from "../dtos/tasks/taskUpdateDto";
 import { HistoricoTask } from "../models/MongoHisotirico";
 
@@ -431,16 +431,16 @@ class TaskService {
         }
     }
 
-    public async getHistoricEditTask(idTask: number): Promise<IDataHisotiro>{
+    public async getHistoricEditTask(idTask: number): Promise<IDynamicKeyData>{
         try {
             const findTask = await this.mongoHistoricoRepository.find({ where: { "taskId": { $eq: idTask } }})
-            const grupoDatas: IDataHisotiro = {};
-            findTask.forEach((objeto) => {
-                const data = objeto.data.slice(0, 10);
+            const grupoDatas: IDynamicKeyData = {};
+            findTask.forEach((task) => {
+                const data = task.data.slice(0, 10);
                 if (!grupoDatas[data]) {
                     grupoDatas[data] = [];
                 }
-                grupoDatas[data].push(objeto);
+                grupoDatas[data].push(task);
             });
             return grupoDatas;
         } catch (error: any) {
@@ -460,6 +460,27 @@ class TaskService {
         } catch (error: any) {
             throw new Error(error)
         }
+    }
+
+    public async getHistoricTaskByOwner(idUser: number) {
+        const tasks = await this.taskRepository.findBy({ userId: idUser });
+        const grupoNames: IDynamicKeyData = {};
+        const listIds = tasks.map(task => ({ id: task.id, name: task.name }));
+        const historicTaskPromises = listIds.map(async (task) => {
+            const historicTasks = await this.mongoHistoricoRepository.find({ where: { taskId: task.id } });
+            return historicTasks;
+        });
+        const historicTaskByOwner = (await Promise.all(historicTaskPromises)).flat();
+        historicTaskByOwner.forEach(task => {
+            const taskName = listIds.find(filterTask => filterTask.id === task.taskId)?.name;
+            if (taskName) {
+                if (!grupoNames[taskName]) {
+                    grupoNames[taskName] = [];
+                }
+                grupoNames[taskName].push(task);
+            }
+        });
+        return grupoNames;
     }
 
     public async getSharedTasksByUserId(userId: number): Promise<Task[]> {
