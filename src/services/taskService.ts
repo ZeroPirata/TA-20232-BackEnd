@@ -53,6 +53,21 @@ class TaskService {
 
     public async shareTask(taskId: number, usersIds: number[]) {
         try {
+            const task = await this.taskRepository
+                .createQueryBuilder("task")
+                .leftJoinAndSelect("task.users", "users")
+                .where("task.id = :taskId", { taskId })
+                .getOne();
+            const users = task?.users
+
+            let usersRemove = []
+            for (const user of users as User[]){
+                if(!usersIds.includes(user.id)){
+                    usersRemove.push(user.id)
+                }
+            }
+            await this.stopTaskSharing(taskId, usersRemove)
+
             const successfullyInsertedIds = [];
             for (const userId of usersIds) {
                 try {
