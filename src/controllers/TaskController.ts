@@ -198,7 +198,7 @@ class TaskController {
 
 
   public async updateTask(req: Request, res: Response) {
-    const { id } = req.params;
+    let { id } = req.params;
     const mongoIdRegex = /^[0-9a-fA-F]{24}$/;
     try {
       let taskUpdate: TaskUpdateDto = req.body;
@@ -212,8 +212,9 @@ class TaskController {
         }
 
       } else {
-        let task = taskRepository.create(taskUpdate);
-        task.id = parseInt(id, 10);
+        console.log(taskUpdate)
+        let taskid = parseInt(id, 10);
+        let task = taskService.updateTask(taskid, taskUpdate as Task)
 
         // const sharedUserIds = task.sharedUsersIds || [];
         // await taskRepository.save(task);
@@ -222,15 +223,17 @@ class TaskController {
         //     await DataBaseSource.getRepository("user_task").insert({ "userId": userId, "taskId": task.id });
         // }
 
-        if (task.customInterval !== 0) {
-          await TaskService.updateFutureTasks(task);
+        taskUpdate.id = taskid
+        if (taskUpdate.customInterval !== 0) {
+          await TaskService.updateFutureTasks(taskUpdate as Task);
         } else {
-          await TaskService.deleteAllFutureTasks(task.id as number);
+          await TaskService.deleteAllFutureTasks(taskUpdate.id as number);
         }
 
         return res.status(200).json({ message: "Task updated successfully", data: task });
       }
     } catch (error: any) {
+      console.log(error)
       if (error.message === "Task not found") {
         res.status(404).json({ error: "Task not found" });
       } else {
