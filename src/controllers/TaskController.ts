@@ -14,20 +14,20 @@ import { DataBaseSource } from "../config/database";
 class TaskController {
   public async createTask(req: Request, res: Response) {
     try {
-      const taskData: Task = req.body; 
+      const taskData: Task = req.body;
       const createdTask = await TaskService.createTask(taskData);
-      
-      if(createdTask && taskData.customInterval > 0 ){
+
+      if (createdTask && taskData.customInterval > 0) {
         console.log("Criando tarefas futuras");
         await TaskService.createFutureTasks(createdTask as Task);
       }
       res.status(200).json({ message: "Task created successfully", data: createdTask });
     } catch (error) {
-        res.status(400).json({  error: "Error creating task" });
+      res.status(400).json({ error: "Error creating task" });
     }
-} 
+  }
 
-public async getAllTasks(req: Request, res: Response) {
+  public async getAllTasks(req: Request, res: Response) {
     try {
       const allTasks = await TaskService.getAllTasks();
       res.status(200).json({ message: "All tasks", data: allTasks });
@@ -36,22 +36,36 @@ public async getAllTasks(req: Request, res: Response) {
     }
   }
 
-public async getAllSharedTasks(req: Request, res: Response) {
-  try {
-    const allTasks = await TaskService.getAllSharedTasks();
-    res.status(200).json({ message: "All shared tasks", data: allTasks });
-  } catch (error) {
-    res.status(400).json({ error: "Tasks not found" });
+  public async shareTask(req: Request, res: Response) {
+    try {
+      const taskId = parseInt(req.params.id, 10);
+      const usersIds: number[] = req.body.usersIds
+      if (usersIds.length < 1) {
+        return res.status(400).json({ error: "No user IDs provided." })
+      }
+      await taskService.shareTask(taskId, usersIds)
+      return res.status(200).json({ message: "Task sharing was successful." })
+    } catch (error) {
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
   }
- }
+
+  public async getAllSharedTasks(req: Request, res: Response) {
+    try {
+      const allTasks = await TaskService.getAllSharedTasks();
+      res.status(200).json({ message: "All shared tasks", data: allTasks });
+    } catch (error) {
+      res.status(400).json({ error: "Tasks not found" });
+    }
+  }
 
   public async getTasksByUserId(req: Request, res: Response) {
     try {
       const userId = parseInt(req.params.userId, 10);
-      
+
       const cyclicTasks: Task[] = await TaskService.getTasksByUserId(userId);
       const tasks = cyclicTasks.filter(task => task.customInterval !== 0);
-  
+
       if (!Array.isArray(cyclicTasks) || cyclicTasks.length === 0) {
         return res.status(404).json({ error: "No tasks found for this user" });
       }
@@ -61,7 +75,7 @@ public async getAllSharedTasks(req: Request, res: Response) {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
-  
+
   public async getSharedTasksByUserId(req: Request, res: Response) {
     try {
       const userId = parseInt(req.params.userId, 10);
@@ -77,48 +91,63 @@ public async getAllSharedTasks(req: Request, res: Response) {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
-  
 
+  public async stopTaskSharing(req: Request, res: Response) {
+    try {
+      const taskId = parseInt(req.params.id, 10);
+      const usersIds: number[] = req.body.usersIds;
+      if (usersIds.length < 1) {
+        return res.status(400).json({ error: "No user IDs provided." })
+      }
+      const result = await taskService.stopTaskSharing(taskId, usersIds)
+      if(result instanceof Error){
+        res.status(500).json({ error: 'Internal Server Error' });    
+      }
+      return res.status(200).json({ message: "Stop sharing with provided users" })
+    } catch (error) {
+      res.status(500).json({ error: 'Internal Server Error' });    
+    }
+  }
 
-public async getTaskById(req: Request, res: Response){
-  try {
-    const id: string = req.params.id; 
-    let task;
-    const taskId: number = parseInt(id, 10); 
-    task = await TaskService.getTaskById(taskId);
+  public async getTaskById(req: Request, res: Response) {
+    try {
+      const id: string = req.params.id;
+      let task;
+      const taskId: number = parseInt(id, 10);
+      task = await TaskService.getTaskById(taskId);
 
       if (task === null) {
         res.status(400).json({ error: "Task not found" });
       } else {
         res.status(200).json({ message: "Task found", data: task });
       }
-    
-  } catch (error: any) { 
-    if (error.message === "Task not found") {
-      res.status(400).json({ error: "Task not found" });
-    } else {
-      res.status(500).json({ error: "Internal Server Error" });
+
+    } catch (error: any) {
+      if (error.message === "Task not found") {
+        res.status(400).json({ error: "Task not found" });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
     }
   }
-}
-  
+
   public async getExpiredTasks(req: Request, res: Response) {
     const { id, date } = req.params;
     const userId = parseInt(id, 10);
     if (isNaN(userId)) {
-      return res.status(400).json({message:"parameter 'id' is not a valid number"})
+      return res.status(400).json({ message: "parameter 'id' is not a valid number" })
     }
 
     try {
       const tasks = await TaskService.getExpiredTasks(userId, date);
-      
+
       if (tasks.recorrente.length === 0 && tasks.naoRecorrente.length === 0) {
         return res.status(404).json({ error: "No tasks found for this user" });
       }
       tasks.recorrente = [... new Set(tasks.recorrente)]
       res.status(200).json({ message: "Expired tasks found for user", data: tasks });
 
-    }catch(error: any){
+    } catch (error: any) {
       if (error.message === "User not found") {
         res.status(404).json({ error: "User not found" });
       } else {
@@ -126,13 +155,13 @@ public async getTaskById(req: Request, res: Response){
       }
     }
   }
-  
+
   public async getTimeSpentByMonth(req: Request, res: Response) {
     const { id, month } = req.params;
     const userId = parseInt(id, 10);
-    
+
     if (isNaN(userId)) {
-      return res.status(400).json({message:"parameter 'id' is not a valid number"})
+      return res.status(400).json({ message: "parameter 'id' is not a valid number" })
     }
 
     try {
@@ -146,7 +175,7 @@ public async getTaskById(req: Request, res: Response){
       }
     }
   }
-  
+
   public async getTimeSpentMonthly(req: Request, res: Response) {
     const { id, year } = req.params;
     const userId = parseInt(id, 10);
@@ -166,116 +195,114 @@ public async getTaskById(req: Request, res: Response){
       }
     }
   }
-  
-  
+
+
   public async updateTask(req: Request, res: Response) {
     const { id } = req.params;
     const mongoIdRegex = /^[0-9a-fA-F]{24}$/;
     try {
-        let taskUpdate: TaskUpdateDto = req.body;
+      let taskUpdate: TaskUpdateDto = req.body;
 
-        if (isNaN(parseInt(id, 10))) {
+      if (isNaN(parseInt(id, 10))) {
 
-            if (!mongoIdRegex.test(id)) {
-                return res.status(400).json({ error: "Only today's task can be updated." });
-            } else {
-                return res.status(400).json({ error: "ID cannot be null." });
-            }
-
+        if (!mongoIdRegex.test(id)) {
+          return res.status(400).json({ error: "Only today's task can be updated." });
         } else {
-            let task = taskRepository.create(taskUpdate);
-            task.id = parseInt(id, 10);
-
-            const sharedUserIds = task.sharedUsersIds || [];
-            await taskRepository.save(task);
-
-            for (const userId of sharedUserIds) {
-                await DataBaseSource.getRepository("user_task").insert({ "userId": userId, "taskId": task.id });
-            }
-
-            if (task.customInterval !== 0) {
-                await TaskService.updateFutureTasks(task);
-            } else {
-                await TaskService.deleteAllFutureTasks(task.id as number);
-            }
-
-            return res.status(200).json({ message: "Task updated successfully", data: task });
+          return res.status(400).json({ error: "ID cannot be null." });
         }
-    } catch (error: any) {
-        if (error.message === "Task not found") {
-            res.status(404).json({ error: "Task not found" });
+
+      } else {
+        let task = taskRepository.create(taskUpdate);
+        task.id = parseInt(id, 10);
+
+        // const sharedUserIds = task.sharedUsersIds || [];
+        // await taskRepository.save(task);
+
+        // for (const userId of sharedUserIds) {
+        //     await DataBaseSource.getRepository("user_task").insert({ "userId": userId, "taskId": task.id });
+        // }
+
+        if (task.customInterval !== 0) {
+          await TaskService.updateFutureTasks(task);
         } else {
-            res.status(500).json({ error: "Internal Server Error", data: JSON.stringify(error) });
+          await TaskService.deleteAllFutureTasks(task.id as number);
         }
-    }
-}
 
-
-  
-public async updatetaskTimeSpent(req: Request, res: Response) {
-  
-  const { id } = req.params;
-  const userId = parseInt(id, 10);
-  
-  if (isNaN(userId)) {
-    return res.status(400).json({message:"parameter 'id' is not a valid number"})
-  }
-
-  try {
-    let taskUpdate : tasktimeUpdateDto = req.body;
-    let task = taskRepository.create(taskUpdate);
-    task.id = parseInt(id, 10);
-
-    await taskRepository.save(task);
-    return res.status(200).json({ message: "Task updated successfully", data: task });
-}
-
-  catch (error: any) {
-    if (error.message === "Task not found") {
-      res.status(404).json({ error: "Task not found" });
-    } else {
-      res.status(500).json({ error: "Internal Server Error" });
-    }
-  }
-}
-
-public async repeatTask(req: Request, res: Response) {
-  try {
-   let id = req.params.id;
-  
-   const taskId = parseInt(id, 10);
-   if(!taskId){
-      return res.status(400).json({ message: "parameter 'id' is not a valid number or not exists" });
-   }
-
-    await TaskService.cloneTask(taskId);
-    await TaskService.deleteFutureTask(taskId);
-    const refreshedTask = await TaskService.refreshTask(taskId);
-    res.status(200).json({ message: "Task repeated successfully", data: refreshedTask });
-    
-  } catch (error:any) {
-    return res.status(500).json({ message: error.message });
-  }
-}
-  public async getAllNonCyclicTasks(req: Request, res: Response){
-    try{
-      let id = req.params.id
-      const userId = parseInt(id, 10)
-      if(!userId){
-        return res.status(400).json({message: "parameter 'id' is not a valid number or not exists"})
+        return res.status(200).json({ message: "Task updated successfully", data: task });
       }
-      const tasks = await TaskService.getAllNonCyclicTasks(userId);
-      res.status(200).json({message: "Found Tasks", data: tasks})
-    }catch(error: any){
+    } catch (error: any) {
+      if (error.message === "Task not found") {
+        res.status(404).json({ error: "Task not found" });
+      } else {
+        res.status(500).json({ error: "Internal Server Error", data: JSON.stringify(error) });
+      }
+    }
+  }
+
+  public async updatetaskTimeSpent(req: Request, res: Response) {
+
+    const { id } = req.params;
+    const userId = parseInt(id, 10);
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "parameter 'id' is not a valid number" })
+    }
+
+    try {
+      let taskUpdate: tasktimeUpdateDto = req.body;
+      let task = taskRepository.create(taskUpdate);
+      task.id = parseInt(id, 10);
+
+      await taskRepository.save(task);
+      return res.status(200).json({ message: "Task updated successfully", data: task });
+    }
+
+    catch (error: any) {
+      if (error.message === "Task not found") {
+        res.status(404).json({ error: "Task not found" });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    }
+  }
+
+  public async repeatTask(req: Request, res: Response) {
+    try {
+      let id = req.params.id;
+
+      const taskId = parseInt(id, 10);
+      if (!taskId) {
+        return res.status(400).json({ message: "parameter 'id' is not a valid number or not exists" });
+      }
+
+      await TaskService.cloneTask(taskId);
+      await TaskService.deleteFutureTask(taskId);
+      const refreshedTask = await TaskService.refreshTask(taskId);
+      res.status(200).json({ message: "Task repeated successfully", data: refreshedTask });
+
+    } catch (error: any) {
       return res.status(500).json({ message: error.message });
     }
   }
-  
+  public async getAllNonCyclicTasks(req: Request, res: Response) {
+    try {
+      let id = req.params.id
+      const userId = parseInt(id, 10)
+      if (!userId) {
+        return res.status(400).json({ message: "parameter 'id' is not a valid number or not exists" })
+      }
+      const tasks = await TaskService.getAllNonCyclicTasks(userId);
+      res.status(200).json({ message: "Found Tasks", data: tasks })
+    } catch (error: any) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
   public async deleteTask(req: Request, res: Response) {
 
     const { id } = req.params;
     const userId = parseInt(id, 10);
-    
+
     if (isNaN(userId)) {
       return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
     }
@@ -293,10 +320,10 @@ public async repeatTask(req: Request, res: Response) {
     }
   }
 
-  public async getHistoricTaskById(req: Request, res: Response){
+  public async getHistoricTaskById(req: Request, res: Response) {
     const id: number = parseInt(req.params.id, 10);
     try {
-      if(isNaN(id)){
+      if (isNaN(id)) {
         return res.status(400).json({ error: "Algo deu errado ao buscar um parâmetro." })
       }
       const updateTask: IDynamicKeyData = await taskService.getHistoricEditTask(id)
@@ -306,10 +333,10 @@ public async repeatTask(req: Request, res: Response) {
     }
   }
 
-  public async getHistoricTaskByUser(req: Request, res: Response){
+  public async getHistoricTaskByUser(req: Request, res: Response) {
     const idUser: number = parseInt(req.params.idUser, 10);
     try {
-      if(isNaN(idUser)){
+      if (isNaN(idUser)) {
         return res.status(400).json({ error: "Algo deu errado ao buscar um parâmetro." })
       }
       const searchedTasks: IDynamicKeyData = await taskService.getHistoricTaskByUser(idUser)
@@ -319,26 +346,26 @@ public async repeatTask(req: Request, res: Response) {
     }
   }
 
-  public async getHisotricTaskByOwner(req: Request, res:Response){
-      const idUser: number = parseInt(req.params.idUser, 10)
-      try {
-        if(isNaN(idUser)){
-          return res.status(400).json({ error: "Algo deu errado ao buscar um parâmetro." })
-        }
-        const searchOwner = await taskService.getHistoricTaskByOwner(idUser)
-        res.json(searchOwner)
-      } catch (error) {
-        
+  public async getHisotricTaskByOwner(req: Request, res: Response) {
+    const idUser: number = parseInt(req.params.idUser, 10)
+    try {
+      if (isNaN(idUser)) {
+        return res.status(400).json({ error: "Algo deu errado ao buscar um parâmetro." })
       }
+      const searchOwner = await taskService.getHistoricTaskByOwner(idUser)
+      res.json(searchOwner)
+    } catch (error) {
+
+    }
   }
 
-  public async UpdateHistorico(req: Request, res: Response){
+  public async UpdateHistorico(req: Request, res: Response) {
     const idTask: number = parseInt(req.params.idTask, 10);
     const idUser: number = parseInt(req.params.idUser, 10);
     try {
-      const user  = await userService.getUserById(idUser);
-      if(!user.email){
-        return res.status(400).json({error: "Usuario não encontrado"})
+      const user = await userService.getUserById(idUser);
+      if (!user.email) {
+        return res.status(400).json({ error: "Usuario não encontrado" })
       }
       let taskUpdate: TaskUpdateDto = req.body;
       const updateTask: IHistorico = await taskService.HistoricEditTask(idTask, taskUpdate, { id: idUser, name: user.name })

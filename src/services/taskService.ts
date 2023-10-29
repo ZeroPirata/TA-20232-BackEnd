@@ -38,7 +38,7 @@ class TaskService {
             return error;
         }
     }
-    
+
     public async getAllTasks() {
         try {
             const allTasks = await this.taskRepository
@@ -51,6 +51,27 @@ class TaskService {
         }
     }
 
+    public async shareTask(taskId: number, usersIds: number[]) {
+        try {
+            const successfullyInsertedIds = [];
+            for (const userId of usersIds) {
+                try {
+                    const result = await DataBaseSource.getRepository("user_task").insert({ userId: userId, taskId: taskId })
+                    successfullyInsertedIds.push(result.identifiers[0].id);
+                } catch (error: any) {
+                    if (error.code === 'ER_DUP_ENTRY') {
+                        console.log(`Duplicate entry: UserId: ${userId} and taskId: ${taskId}`);
+                    } else {
+                        console.log(`Error to insert: UserId: ${userId} and taskId: ${taskId}`, error);
+                    }
+                }
+            }
+            return successfullyInsertedIds;
+        } catch (error) {
+            return error;
+        }
+    }
+
     public async getAllSharedTasks() {
         try {
             const allTasks = await this.taskRepository
@@ -58,6 +79,17 @@ class TaskService {
                 .where('task.sharedUsersIds IS NOT NULL')
                 .getMany();
             return allTasks;
+        } catch (error) {
+            return error;
+        }
+    }
+
+    public async stopTaskSharing(taskId: number, usersIds: number[]) {
+        try {
+            for (const userId of usersIds) {
+                await DataBaseSource.getRepository("user_task").delete({taskId: taskId, userId: userId})
+            }
+            return
         } catch (error) {
             return error;
         }
@@ -86,7 +118,7 @@ class TaskService {
             const recorente = tasks.filter((task: Task) => { return task.customInterval > 0 })
             const naoRecorente = tasks.filter((task: Task) => { return task.customInterval === 0 })
             const pastCycleTasks = await this.mongoTaskRepository.find({ where: { userId: userId, deadline: date } });
-            const futureCycleTasks = await this.mongoFutureTaskRepository.find({where: {userId: userId, deadline: date}});
+            const futureCycleTasks = await this.mongoFutureTaskRepository.find({ where: { userId: userId, deadline: date } });
             const retorno = { recorrente: [...recorente, ...pastCycleTasks, ...futureCycleTasks], naoRecorrente: [...naoRecorente] };
             return retorno
         } catch (error) {
@@ -144,15 +176,15 @@ class TaskService {
         }
     }
 
-    public async getAllNonCyclicTasks(userId: number){
+    public async getAllNonCyclicTasks(userId: number) {
         try {
             const tasks = await this.taskRepository
-            .createQueryBuilder("task")
-            .leftJoinAndSelect("task.users", "users")
-            .addSelect(["users.email"])
-            .where("task.userId = :userId", {userId })
-            .getMany();
-            const nonCyclicTasks = tasks.filter((task)=>{ return task.customInterval === 0})
+                .createQueryBuilder("task")
+                .leftJoinAndSelect("task.users", "users")
+                .addSelect(["users.email"])
+                .where("task.userId = :userId", { userId })
+                .getMany();
+            const nonCyclicTasks = tasks.filter((task) => { return task.customInterval === 0 })
             return nonCyclicTasks
         } catch (error) {
             return error;
@@ -171,10 +203,10 @@ class TaskService {
         }
     }
 
-    public async getAllCyclicTasks(userId: number){
+    public async getAllCyclicTasks(userId: number) {
         try {
-            const tasks = await this.taskRepository.find({where: {userId: userId}})
-            const cyclicTasks = tasks.filter((task)=>{ return task.customInterval > 0})
+            const tasks = await this.taskRepository.find({ where: { userId: userId } })
+            const cyclicTasks = tasks.filter((task) => { return task.customInterval > 0 })
             return cyclicTasks
         } catch (error) {
             console.log(error)
@@ -210,12 +242,12 @@ class TaskService {
     public async deleteTask(id: number) {
         const mongoFutureTaskRepository = MongoDataSource.getMongoRepository(MongoFutureTask);
         const mongoTaskRepository = MongoDataSource.getMongoRepository(MongoTask);
-        
+
         try {
             const deletedTask = await this.taskRepository.delete(id);
             mongoTaskRepository.deleteMany({ "taskId": id });
             mongoFutureTaskRepository.deleteMany({ "taskId": id });
-            
+
             if (!deletedTask.affected) {
                 throw new Error("Task not found");
             }
@@ -225,16 +257,16 @@ class TaskService {
         }
     }
 
-    public async refreshTask(taskId: number){
+    public async refreshTask(taskId: number) {
         try {
             const task = await this.taskRepository.findOne({ where: { id: taskId } });
-            if(!task){
+            if (!task) {
                 throw new Error("Task not found");
             }
-            let subtasks =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
+            let subtasks = await subtaskService.getSubtasksByTask(taskId) as Subtask[];
             subtasks.forEach(subtask => {
                 subtask.done = false;
-                subtaskService.updateSubtask(subtask.id,subtask);
+                subtaskService.updateSubtask(subtask.id, subtask);
             });
 
 
@@ -248,7 +280,7 @@ class TaskService {
                 throw new Error("Task not found");
             }
             return updatedTask;
-            
+
         } catch (error) {
             return error;
         }
@@ -260,7 +292,7 @@ class TaskService {
             if (!task) {
                 throw new Error("Task not found");
             }
-            
+
             const today = moment(new Date()).tz('America/Sao_Paulo')
             const deletedTask = await this.mongoFutureTaskRepository.delete({ taskId: taskId, deadline: today.format("YYYY-MM-DD") });
             if (!deletedTask.affected) {
@@ -273,7 +305,7 @@ class TaskService {
     }
 
     public async deleteAllFutureTasks(taskId: number) {
-        try {          
+        try {
             const deletedTask = await this.mongoFutureTaskRepository.delete({ taskId: taskId });
             if (!deletedTask.affected) {
                 throw new Error("Task not found");
@@ -284,15 +316,15 @@ class TaskService {
             return error;
         }
     }
-    
+
     public async cloneTask(taskId: number) {
         try {
             const task = await this.taskRepository.findOne({ where: { id: taskId } });
-            if(!task){
+            if (!task) {
                 throw new Error("Task not found");
             }
-            
-            task.subtask =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
+
+            task.subtask = await subtaskService.getSubtasksByTask(taskId) as Subtask[];
 
             const newTask = new MongoTask();
 
@@ -326,19 +358,19 @@ class TaskService {
     public async createFutureTasks(task: Task) {
         try {
             const taskInfo = await this.taskRepository.findOne({ where: { id: task.id } });
-            if(!taskInfo){
+            if (!taskInfo) {
                 throw new Error("Task not found");
             }
-            taskInfo.subtask =  await subtaskService.getSubtasksByTask(taskInfo.id as number) as Subtask[];
+            taskInfo.subtask = await subtaskService.getSubtasksByTask(taskInfo.id as number) as Subtask[];
 
-            let createdDate: string| Moment
+            let createdDate: string | Moment
             createdDate = moment(taskInfo.createdAt).tz('America/Sao_Paulo').format("YYYY-MM-DD");
             let today = moment(new Date()).tz('America/Sao_Paulo').format("YYYY-MM-DD");
 
             if (createdDate != today) {
                 createdDate = moment(new Date());
 
-            }else{
+            } else {
                 createdDate = moment(taskInfo.createdAt)
             }
 
@@ -350,7 +382,7 @@ class TaskService {
                 createdDate.add(taskInfo.customInterval, 'days').tz('America/Sao_Paulo').format("YYYY-MM-DD");
 
                 // Transformando Task em MongoTask
-                newTask.createdAt = taskInfo.createdAt; 
+                newTask.createdAt = taskInfo.createdAt;
                 newTask.customInterval = taskInfo.customInterval;
                 newTask.id = new mongoose.Types.ObjectId().toString();
                 newTask.deadline = createdDate.tz('America/Sao_Paulo').format("YYYY-MM-DD");
@@ -364,27 +396,27 @@ class TaskService {
                 newTask.taskId = taskInfo.id;
                 newTask.timeSpent = taskInfo.timeSpent;
                 newTask.userId = taskInfo.userId;
-                
+
                 futureTasks.push(newTask);
 
-            } 
-            
+            }
+
             await this.mongoFutureTaskRepository.save(futureTasks);
-            
+
             return futureTasks;
-            
-        } catch(error){
+
+        } catch (error) {
             console.log(error);
             return error;
         }
     }
 
     public async updateFutureTasks(task: Task) {
-        try{
+        try {
             await this.deleteAllFutureTasks(task.id as number);
-            const futureTasks = await this.createFutureTasks(task);            
+            const futureTasks = await this.createFutureTasks(task);
             return futureTasks
-        } catch(error){
+        } catch (error) {
             console.log(error);
             return error;
         }
@@ -392,14 +424,14 @@ class TaskService {
 
     public async getTasksByUserId(userId: number): Promise<Task[]> {
         try {
-          const tasks = await this.taskRepository
-            .createQueryBuilder('task')
-            .where('task.userId = :userId', { userId })
-            .getMany();
-      
-          return tasks;
+            const tasks = await this.taskRepository
+                .createQueryBuilder('task')
+                .where('task.userId = :userId', { userId })
+                .getMany();
+
+            return tasks;
         } catch (error: unknown) {
-          throw new Error(error as string);
+            throw new Error(error as string);
         }
     }
 
@@ -431,9 +463,9 @@ class TaskService {
         }
     }
 
-    public async getHistoricEditTask(idTask: number): Promise<IDynamicKeyData>{
+    public async getHistoricEditTask(idTask: number): Promise<IDynamicKeyData> {
         try {
-            const findTask = await this.mongoHistoricoRepository.find({ where: { "taskId": { $eq: idTask } }})
+            const findTask = await this.mongoHistoricoRepository.find({ where: { "taskId": { $eq: idTask } } })
             const grupoDatas: IDynamicKeyData = {};
             findTask.forEach((task) => {
                 const data = task.data.slice(0, 10);
@@ -448,7 +480,7 @@ class TaskService {
         }
     }
 
-    public async getHistoricTaskByUser(idUser: number): Promise<IDynamicKeyData>{
+    public async getHistoricTaskByUser(idUser: number): Promise<IDynamicKeyData> {
         try {
             const tasks = await this.taskRepository.findBy({ userId: idUser });
             const search = await this.mongoHistoricoRepository.find({ where: { "user.id": { $eq: idUser } } });
@@ -496,18 +528,18 @@ class TaskService {
 
     public async getSharedTasksByUserId(userId: number): Promise<Task[]> {
         try {
-          const tasks = await this.taskRepository
-            .createQueryBuilder('task')
-            .innerJoinAndSelect('task.users', 'user')
-            .where('user.id = :userId', { userId })
-            .getMany();
-    
-          return tasks;
+            const tasks = await this.taskRepository
+                .createQueryBuilder('task')
+                .innerJoinAndSelect('task.users', 'user')
+                .where('user.id = :userId', { userId })
+                .getMany();
+
+            return tasks;
         } catch (error: unknown) {
-          throw new Error(error as string);
+            throw new Error(error as string);
         }
-      }
-      
+    }
+
 }
 
 export default new TaskService();
