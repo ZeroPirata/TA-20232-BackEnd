@@ -302,17 +302,7 @@ class TaskController {
   }
 
   public async deleteTask(req: Request, res: Response) {
-<<<<<<< HEAD
     const { id, userId } = req.params;
-=======
-
-    const { id } = req.params;
-    const userId = parseInt(id, 10);
-
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
-    }
->>>>>>> 5a1789b4466f56e7026f69a81549d7d23cc88fbb
 
     try {
         const taskId: number = parseInt(id, 10);
