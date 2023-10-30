@@ -1,5 +1,8 @@
+import {ObjectId} from "typeorm";
+
 export interface IHistorico {
-  id: number;
+  id?: ObjectId;
+  taskId: number;
   data: string;
   user: {
     id: number;
@@ -11,4 +14,8 @@ export interface IHistorico {
       new: string;
     };
   };
+}
+
+export interface IDynamicKeyData {
+  [data: string]: IHistorico[];
 }

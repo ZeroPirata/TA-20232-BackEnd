@@ -45,10 +45,23 @@ taskRouter.post("/UpdateHistorico/:idTask/:idUser", TaskController.UpdateHistori
 taskRouter.get("/getAllSharedTasks/", TaskController.getAllSharedTasks,
 );  // #swagger.tags = ['Task']);
 
+taskRouter.post("/shareTask/:id", TaskController.shareTask,
+); // #swagger.tags = ['Task']);
+
+taskRouter.delete("/stopTaskSharing/:id", TaskController.stopTaskSharing,
+); // #swagger.tags = ['Task']);
+
+taskRouter.get("/getHistoricTask/:id", TaskController.getHistoricTaskById,
+    // #swagger.tags = ['Task']
+)
+taskRouter.get("/getHistoricTaskByUser/:idUser", TaskController.getHistoricTaskByUser,
+    // #swagger.tags = ['Task']
+)
+taskRouter.get("/getHisotricTaskByOwner/:idUser", TaskController.getHisotricTaskByOwner,
+    // #swagger.tags = ['Task']
+)
 taskRouter.get("/getSharedTasksByUserId/:userId", TaskController.getSharedTasksByUserId,
-);// #swagger.tags = ['Task'])
-
-
-
+    // #swagger.tags = ['Task']
+)
 
 export default taskRouter;
