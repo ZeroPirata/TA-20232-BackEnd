@@ -272,26 +272,34 @@ public async repeatTask(req: Request, res: Response) {
   }
   
   public async deleteTask(req: Request, res: Response) {
-
-    const { id } = req.params;
-    const userId = parseInt(id, 10);
-    
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "O parâmetro 'id' não é um número válido" });
-    }
+    const { id, userId } = req.params;
 
     try {
-      const taskId: number = parseInt(req.params.id, 10);
-      const task = await TaskService.deleteTask(taskId);
-      res.status(200).json({ message: "Task deleted successfully", data: task });
+        const taskId: number = parseInt(id, 10);
+        const userIdNumber: number = parseInt(userId, 10);
+
+        if (isNaN(taskId) || isNaN(userIdNumber)) {
+            return res.status(400).json({ message: "IDs inválidos" });
+        }
+
+        const task = await TaskService.deleteTask(taskId, userIdNumber);
+
+        if (task instanceof Error) {
+            if (task.message === "Task not found") {
+                res.status(404).json({ error: "Task not found" });
+            } else if (task.message === "Permission denied. You do not have permission to delete this task.") {
+                res.status(403).json({ error: "Permission denied. You are not the owner of this task." });
+            } else {
+                res.status(500).json({ error: "Internal Server Error" });
+            }
+        } else {
+            res.status(200).json({ message: "Task deleted successfully", data: task });
+        }
     } catch (error: any) {
-      if (error.message === "Task not found") {
-        res.status(404).json({ error: "Task not found" });
-      } else {
-        res.status(500).json({ error: "Internal Server Error" });
-      }
+        res.status(500).json({ error: "Internal Server Error", data: error });
     }
-  }
+}
+
 
   public async UpdateHistorico(req: Request, res: Response){
     const idTask: number = parseInt(req.params.idTask, 10);
