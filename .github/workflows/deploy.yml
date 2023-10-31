@@ -16,13 +16,16 @@ jobs:
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_AZURE }}
-
+          
       - name: Deploy to Azure VM
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.USER_AZURE }}@${{ secrets.HOST_AZURE }}
       - name: Atualizar o Git com a Main
         run: |
-           "cd /home/azureuser/API-2023.2-Back-End && git pull origin main"
+          cd /home/azureuser/API-2023.2-Back-End
+          git pull origin main
       - name: Rodar o PM2
         run: |
-          "cd /home/azureuser/API-2023.2-Back-End && pm2 start ecosystem.config.js --only oracle-backend-production"
+          cd /home/azureuser/API-2023.2-Back-End
+          /home/azureuser/.nvm/versions/node/v20.8.0/bin/pm2 start ecosystem.config.js --only oracle-backend-production
+
