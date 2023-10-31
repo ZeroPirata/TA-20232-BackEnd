@@ -19,12 +19,8 @@ jobs:
 
       - name: Atualizar o Git com a Main
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.USER_AZURE }}@${{ secrets.HOST_AZURE }}
-          cd /home/azureuser/API-2023.2-Back-End
-          git pull origin main
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USER_AZURE }}@${{ secrets.HOST_AZURE }} "cd /path/to/your/app && git pull origin main"
       - name: Rodar o PM2
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.USER_AZURE }}@${{ secrets.HOST_AZURE }}
-          cd /home/azureuser/API-2023.2-Back-End
-          /home/azureuser/.nvm/versions/node/v20.8.0/bin/pm2 start ecosystem.config.js --only oracle-backend-production
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USER_AZURE }}@${{ secrets.HOST_AZURE }} "cd /home/azureuser/API-2023.2-Back-End && /home/azureuser/.nvm/versions/node/v20.8.0/bin/pm2 start ecosystem.config.js --only oracle-backend-production"
 
