@@ -3,7 +3,7 @@ name: Deploy to Azure VM
 on:
   push:
     branches:
-      - develop
+      - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,4 +19,10 @@ jobs:
 
       - name: Deploy to Azure VM
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.USER_AZURE }}@${{ secrets.HOST_AZURE }} "cd /home/azureuser/API-2023.2-Back-End && git pull origin main && /home/azureuser/.nvm/versions/node/v20.8.0/bin/pm2 start /home/azureuser/API-2023.2-Back-End/ecosystem.config.js --only oracle-backend-production"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USER_AZURE }}@${{ secrets.HOST_AZURE }}
+      - name: Atualizar o Git com a Main
+        run: |
+           "cd /home/azureuser/API-2023.2-Back-End && git pull origin main"
+      - name: Rodar o PM2
+        run: |
+          "cd /home/azureuser/API-2023.2-Back-End && pm2 start ecosystem.config.js --only oracle-backend-production"
