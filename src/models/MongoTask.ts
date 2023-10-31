@@ -51,8 +51,13 @@ export class MongoTask {
     @CreateDateColumn({ name: 'created_at'})
     createdAt!: Date;
 
-    @Column()
-    userId!: number | User;
+    @Column({
+        type: "int",
+    })
+    userId!: number;
+
+    @Column({default: []})
+    users?: User[] = [];
 
     @Column()
     subtask!: Subtask[];

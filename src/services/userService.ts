@@ -41,7 +41,7 @@ class UserService{
         }
       }
 
-      public async getUserById(id: number){
+      public async getUserById(id: number): Promise<UserDto>{
         try{
             const user = await this.userRepository.findOneBy({ id : id } );
             if(!user){
@@ -49,7 +49,7 @@ class UserService{
             }else{
               return user;
             }
-        }catch(error){
+        }catch(error: any){
           return error;
         }
       }

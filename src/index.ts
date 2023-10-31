@@ -3,6 +3,8 @@ import cors from 'cors';
 import router from './routes';
 import {DataBaseSource} from "./config/database";
 import {MongoDataSource} from './config/mongoConfig';
+import * as dotenv from "dotenv";
+dotenv.config();
 
 DataBaseSource.initialize()
     .then(() => {
@@ -23,7 +25,9 @@ MongoDataSource.initialize()
 
 const app = express();
 
-app.listen(5000, ()=>{
+let PORT = process.env.PORT_PRODUCTION || 5000
+
+app.listen(PORT || 5000, ()=>{
     console.log("App is running on port 5000")
 })
 

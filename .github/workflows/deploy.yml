@@ -1,0 +1,22 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - develop
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_AZURE }}
+
+      - name: Deploy to Azure VM
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USER_AZURE }}@${{ secrets.HOST_AZURE }} "cd /home/azureuser/API-2023.2-Back-End && git pull origin main &&/home/azureuser/.nvm/versions/node/v20.8.0/bin/pm2 start /home/azureuser/API-2023.2-Back-End/ecosystem.config.js --only oracle-backend-production"

@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { MongoRepository, Repository } from "typeorm";
 import { DataBaseSource } from "../config/database";
 import { Subtask, Task, User } from "../models";
 import mongoose from "mongoose";
@@ -9,21 +9,30 @@ import { StatusLevels } from "../models/StatusLevels";
 import { MongoFutureTask } from "../models/MongoFutureTasks";
 import moment, { Moment } from "moment-timezone";
 import { create } from "domain";
+import { IDynamicKeyData, IHistorico } from "../interfaces/historico";
+import { TaskUpdateDto } from "../dtos/tasks/taskUpdateDto";
+import { HistoricoTask } from "../models/MongoHisotirico";
 
 class TaskService {
     private taskRepository: Repository<Task>;
     private mongoTaskRepository: Repository<MongoTask>;
     private mongoFutureTaskRepository: Repository<MongoFutureTask>;
+    private mongoHistoricoRepository: MongoRepository<HistoricoTask>;
 
     constructor() {
         this.taskRepository = DataBaseSource.getRepository(Task);
         this.mongoTaskRepository = MongoDataSource.getMongoRepository(MongoTask);
         this.mongoFutureTaskRepository = MongoDataSource.getMongoRepository(MongoFutureTask);
+        this.mongoHistoricoRepository = MongoDataSource.getMongoRepository(HistoricoTask);
     }
 
     public async createTask(task: Task) {
         try {
+            const sharedUserIds: number[] = task.sharedUsersIds || [];
             const newTask = await this.taskRepository.save(task);
+            for (const userId of sharedUserIds) {
+                await DataBaseSource.getRepository("user_task").insert({ "userId": userId, "taskId": newTask.id });
+            }
             return newTask;
         } catch (error) {
             return error;
@@ -37,6 +46,65 @@ class TaskService {
                 .where('task.customInterval IS NOT NULL AND task.customInterval = 0')
                 .getMany();
             return allTasks;
+        } catch (error) {
+            return error;
+        }
+    }
+
+    public async shareTask(taskId: number, usersIds: number[]) {
+        try {
+            const task = await this.taskRepository
+                .createQueryBuilder("task")
+                .leftJoinAndSelect("task.users", "users")
+                .where("task.id = :taskId", { taskId })
+                .getOne();
+            const users = task?.users
+
+            let usersRemove = []
+            for (const user of users as User[]){
+                if(!usersIds.includes(user.id)){
+                    usersRemove.push(user.id)
+                }
+            }
+            await this.stopTaskSharing(taskId, usersRemove)
+
+            const successfullyInsertedIds = [];
+            for (const userId of usersIds) {
+                try {
+                    const result = await DataBaseSource.getRepository("user_task").insert({ userId: userId, taskId: taskId })
+                    successfullyInsertedIds.push(result.identifiers[0].id);
+                } catch (error: any) {
+                    if (error.code === 'ER_DUP_ENTRY') {
+                        console.log(`Duplicate entry: UserId: ${userId} and taskId: ${taskId}`);
+                    } else {
+                        console.log(`Error to insert: UserId: ${userId} and taskId: ${taskId}`, error);
+                    }
+                }
+            }
+            return successfullyInsertedIds;
+        } catch (error) {
+            return error;
+        }
+    }
+
+    public async getAllSharedTasks() {
+        try {
+            const allTasks = await this.taskRepository
+                .createQueryBuilder("task")
+                .where('task.sharedUsersIds IS NOT NULL')
+                .getMany();
+            return allTasks;
+        } catch (error) {
+            return error;
+        }
+    }
+
+    public async stopTaskSharing(taskId: number, usersIds: number[]) {
+        try {
+            for (const userId of usersIds) {
+                await DataBaseSource.getRepository("user_task").delete({taskId: taskId, userId: userId})
+            }
+            return
         } catch (error) {
             return error;
         }
@@ -65,7 +133,7 @@ class TaskService {
             const recorente = tasks.filter((task: Task) => { return task.customInterval > 0 })
             const naoRecorente = tasks.filter((task: Task) => { return task.customInterval === 0 })
             const pastCycleTasks = await this.mongoTaskRepository.find({ where: { userId: userId, deadline: date } });
-            const futureCycleTasks = await this.mongoFutureTaskRepository.find({where: {userId: userId, deadline: date}});
+            const futureCycleTasks = await this.mongoFutureTaskRepository.find({ where: { userId: userId, deadline: date } });
             const retorno = { recorrente: [...recorente, ...pastCycleTasks, ...futureCycleTasks], naoRecorrente: [...naoRecorente] };
             return retorno
         } catch (error) {
@@ -123,10 +191,15 @@ class TaskService {
         }
     }
 
-    public async getAllNonCyclicTasks(userId: number){
+    public async getAllNonCyclicTasks(userId: number) {
         try {
-            const tasks = await this.taskRepository.find({where: { userId: { id: userId } }})
-            const nonCyclicTasks = tasks.filter((task)=>{ return task.customInterval === 0})
+            const tasks = await this.taskRepository
+                .createQueryBuilder("task")
+                .leftJoinAndSelect("task.users", "users")
+                .addSelect(["users.email"])
+                .where("task.userId = :userId", { userId })
+                .getMany();
+            const nonCyclicTasks = tasks.filter((task) => { return task.customInterval === 0 })
             return nonCyclicTasks
         } catch (error) {
             return error;
@@ -145,10 +218,10 @@ class TaskService {
         }
     }
 
-    public async getAllCyclicTasks(userId: number){
+    public async getAllCyclicTasks(userId: number) {
         try {
-            const tasks = await this.taskRepository.find({where: {userId: userId}})
-            const cyclicTasks = tasks.filter((task)=>{ return task.customInterval > 0})
+            const tasks = await this.taskRepository.find({ where: { userId: userId } })
+            const cyclicTasks = tasks.filter((task) => { return task.customInterval > 0 })
             return cyclicTasks
         } catch (error) {
             console.log(error)
@@ -181,15 +254,25 @@ class TaskService {
         }
     }
 
-    public async deleteTask(id: number) {
+    public async deleteTask(id: number, userId: number) {
         const mongoFutureTaskRepository = MongoDataSource.getMongoRepository(MongoFutureTask);
         const mongoTaskRepository = MongoDataSource.getMongoRepository(MongoTask);
-        
+
         try {
+            const task = await this.taskRepository.findOne({ where: { id } });
+    
+            if (!task) {
+                throw new Error("Task not found");
+            }
+    
+            if (task.userId !== userId) {
+                throw new Error("Permission denied. You do not have permission to delete this task.");
+            }
+    
             const deletedTask = await this.taskRepository.delete(id);
             mongoTaskRepository.deleteMany({ "taskId": id });
             mongoFutureTaskRepository.deleteMany({ "taskId": id });
-            
+
             if (!deletedTask.affected) {
                 throw new Error("Task not found");
             }
@@ -199,16 +282,16 @@ class TaskService {
         }
     }
 
-    public async refreshTask(taskId: number){
+    public async refreshTask(taskId: number) {
         try {
             const task = await this.taskRepository.findOne({ where: { id: taskId } });
-            if(!task){
+            if (!task) {
                 throw new Error("Task not found");
             }
-            let subtasks =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
+            let subtasks = await subtaskService.getSubtasksByTask(taskId) as Subtask[];
             subtasks.forEach(subtask => {
                 subtask.done = false;
-                subtaskService.updateSubtask(subtask.id,subtask);
+                subtaskService.updateSubtask(subtask.id, subtask);
             });
 
 
@@ -222,7 +305,7 @@ class TaskService {
                 throw new Error("Task not found");
             }
             return updatedTask;
-            
+
         } catch (error) {
             return error;
         }
@@ -234,7 +317,7 @@ class TaskService {
             if (!task) {
                 throw new Error("Task not found");
             }
-            
+
             const today = moment(new Date()).tz('America/Sao_Paulo')
             const deletedTask = await this.mongoFutureTaskRepository.delete({ taskId: taskId, deadline: today.format("YYYY-MM-DD") });
             if (!deletedTask.affected) {
@@ -247,7 +330,7 @@ class TaskService {
     }
 
     public async deleteAllFutureTasks(taskId: number) {
-        try {          
+        try {
             const deletedTask = await this.mongoFutureTaskRepository.delete({ taskId: taskId });
             if (!deletedTask.affected) {
                 throw new Error("Task not found");
@@ -258,17 +341,18 @@ class TaskService {
             return error;
         }
     }
-    
+
     public async cloneTask(taskId: number) {
         try {
             const task = await this.taskRepository.findOne({ where: { id: taskId } });
-            if(!task){
+            if (!task) {
                 throw new Error("Task not found");
             }
-            
-            task.subtask =  await subtaskService.getSubtasksByTask(taskId) as Subtask[];
+
+            task.subtask = await subtaskService.getSubtasksByTask(taskId) as Subtask[];
 
             const newTask = new MongoTask();
+
             // Transformando Task em MongoTask
             newTask.id = new mongoose.Types.ObjectId().toString();
             newTask.createdAt = task.createdAt;
@@ -284,7 +368,8 @@ class TaskService {
             newTask.taskId = task.id;
             newTask.timeSpent = task.timeSpent;
             newTask.subtask = task.subtask;
-            newTask.userId = typeof task.userId === "number"? task.userId: task.userId.id as number;
+            newTask.userId = task.userId;
+            newTask.users = task.users;
 
             const createTask = await this.mongoTaskRepository.save(newTask);
             return createTask;
@@ -298,19 +383,19 @@ class TaskService {
     public async createFutureTasks(task: Task) {
         try {
             const taskInfo = await this.taskRepository.findOne({ where: { id: task.id } });
-            if(!taskInfo){
+            if (!taskInfo) {
                 throw new Error("Task not found");
             }
-            taskInfo.subtask =  await subtaskService.getSubtasksByTask(taskInfo.id as number) as Subtask[];
+            taskInfo.subtask = await subtaskService.getSubtasksByTask(taskInfo.id as number) as Subtask[];
 
-            let createdDate: string| Moment
+            let createdDate: string | Moment
             createdDate = moment(taskInfo.createdAt).tz('America/Sao_Paulo').format("YYYY-MM-DD");
             let today = moment(new Date()).tz('America/Sao_Paulo').format("YYYY-MM-DD");
 
             if (createdDate != today) {
                 createdDate = moment(new Date());
 
-            }else{
+            } else {
                 createdDate = moment(taskInfo.createdAt)
             }
 
@@ -322,7 +407,7 @@ class TaskService {
                 createdDate.add(taskInfo.customInterval, 'days').tz('America/Sao_Paulo').format("YYYY-MM-DD");
 
                 // Transformando Task em MongoTask
-                newTask.createdAt = taskInfo.createdAt; 
+                newTask.createdAt = taskInfo.createdAt;
                 newTask.customInterval = taskInfo.customInterval;
                 newTask.id = new mongoose.Types.ObjectId().toString();
                 newTask.deadline = createdDate.tz('America/Sao_Paulo').format("YYYY-MM-DD");
@@ -335,51 +420,151 @@ class TaskService {
                 newTask.subtask = taskInfo.subtask;
                 newTask.taskId = taskInfo.id;
                 newTask.timeSpent = taskInfo.timeSpent;
-                newTask.userId = taskInfo.userId.id? taskInfo.userId.id as number : taskInfo.userId as number;
-                
+                newTask.userId = taskInfo.userId;
+
                 futureTasks.push(newTask);
 
-            } 
-            
+            }
+
             await this.mongoFutureTaskRepository.save(futureTasks);
-            
+
             return futureTasks;
-            
-        } catch(error){
+
+        } catch (error) {
             console.log(error);
             return error;
         }
     }
 
     public async updateFutureTasks(task: Task) {
-        try{
+        try {
             await this.deleteAllFutureTasks(task.id as number);
-            const futureTasks = await this.createFutureTasks(task);            
+            const futureTasks = await this.createFutureTasks(task);
             return futureTasks
-        } catch(error){
+        } catch (error) {
             console.log(error);
             return error;
         }
     }
 
     public async getTasksByUserId(userId: number): Promise<Task[]> {
-
         try {
-            let allTasks = await this.taskRepository
+            const tasks = await this.taskRepository
                 .createQueryBuilder('task')
                 .where('task.userId = :userId', { userId })
                 .getMany();
 
-            if (allTasks.length === 0) {
-                throw new Error("tasks not found");
-            }
+            return tasks;
+        } catch (error: unknown) {
+            throw new Error(error as string);
+        }
+    }
 
-          
-            return allTasks;
+    public async HistoricEditTask(idTask: number, taskUpdate: TaskUpdateDto, user: { name: string, id: number }) {
+        try {
+            let historicoEdit: IHistorico = {
+                taskId: idTask,
+                user,
+                data: new Date().toISOString(),
+                campo: {}
+            };
+            const fields = ["name", "description", "priority", "status", "done", "customInterval", "lastExecution", "timeSpent", "deadline"];
+            const task = await this.taskRepository.findOne({ where: { id: idTask } });
+            if (task) {
+                for (const field of fields) {
+                    if ((taskUpdate as any)[field] !== undefined && (task as any)[field] !== (taskUpdate as any)[field]) {
+                        historicoEdit.campo[field] = {
+                            old: (task as any)[field],
+                            new: (taskUpdate as any)[field]
+                        };
+                    }
+                }
+                const save = await this.mongoHistoricoRepository.save(historicoEdit);
+                return save;
+            }
+            return historicoEdit
         } catch (error: any) {
             throw new Error(error);
         }
     }
+
+    public async getHistoricEditTask(idTask: number): Promise<IDynamicKeyData> {
+        try {
+            const findTask = await this.mongoHistoricoRepository.find({ where: { "taskId": { $eq: idTask } } })
+            const grupoDatas: IDynamicKeyData = {};
+            findTask.forEach((task) => {
+                const data = task.data.slice(0, 10);
+                if (!grupoDatas[data]) {
+                    grupoDatas[data] = [];
+                }
+                grupoDatas[data].push(task);
+            });
+            return grupoDatas;
+        } catch (error: any) {
+            throw new Error(error)
+        }
+    }
+
+    public async getHistoricTaskByUser(idUser: number): Promise<IDynamicKeyData> {
+        try {
+            const tasks = await this.taskRepository.findBy({ userId: idUser });
+            const search = await this.mongoHistoricoRepository.find({ where: { "user.id": { $eq: idUser } } });
+            const taskIdsSet = new Set(tasks.map(task => task.id));
+            const filteredSearch = search.filter(mongoTask => !taskIdsSet.has(mongoTask.taskId));
+            filteredSearch.sort((a: IHistorico, b: IHistorico) => {
+                const dataA = new Date(a.data).getTime();
+                const dataB = new Date(b.data).getTime();
+                return dataB - dataA;
+            });
+            const grupoDatas: IDynamicKeyData = {};
+            filteredSearch.forEach(task => {
+                const data = task.data.slice(0, 10);
+                if (!grupoDatas[data]) {
+                    grupoDatas[data] = [];
+                }
+                grupoDatas[data].push(task);
+            });
+            return grupoDatas;
+        } catch (error: any) {
+            throw new Error(error)
+        }
+    }
+
+    public async getHistoricTaskByOwner(idUser: number) {
+        const tasks = await this.taskRepository.findBy({ userId: idUser });
+        const grupoNames: IDynamicKeyData = {};
+        const listIds = tasks.map(task => ({ id: task.id, name: task.name }));
+        const historicTaskPromises = listIds.map(async (task) => {
+            const historicTasks = await this.mongoHistoricoRepository.find({ where: { taskId: task.id } });
+            return historicTasks;
+        });
+        const historicTaskByOwner = (await Promise.all(historicTaskPromises)).flat();
+        historicTaskByOwner.forEach(task => {
+            const taskName = listIds.find(filterTask => filterTask.id === task.taskId)?.name;
+            if (taskName) {
+                if (!grupoNames[taskName]) {
+                    grupoNames[taskName] = [];
+                }
+                grupoNames[taskName].push(task);
+            }
+        });
+        return grupoNames;
+    }
+
+    public async getSharedTasksByUserId(userId: number): Promise<Task[]> {
+        try {
+            const tasks = await this.taskRepository
+                .createQueryBuilder('task')
+                .innerJoinAndSelect('task.users', 'user')
+                .where('user.id = :userId', { userId })
+                .getMany();
+
+            return tasks;
+        } catch (error: unknown) {
+            throw new Error(error as string);
+        }
+    }
+
 }
 
 export default new TaskService();

@@ -22,7 +22,7 @@ export class Task {
     @PrimaryGeneratedColumn({
         type: "int",
     })
-    id!: number | string;
+    id!: number;
 
     @Column({
         type: "varchar",
@@ -77,8 +77,17 @@ export class Task {
     @CreateDateColumn({ name: 'created_at'})
     createdAt!: Date;
 
-    @ManyToOne(() => User, (user) => user.tasks, {eager:true})
-    userId!: any;
+    @Column({
+        type: "int",
+    })
+    userId!: number;
+
+    @Column("simple-array", { nullable: true })
+    sharedUsersIds!: number[];
+
+    @ManyToMany(() => User, (user) => user.tasks, { onDelete: "CASCADE" })
+    @JoinColumn({name: "user_task"})
+    users!: User[];
 
     @ManyToMany(() => Subtask, ( subtask) => subtask.task, { onDelete: "CASCADE" })
     @JoinColumn({name: "subtask_id"})

@@ -35,8 +35,8 @@ export class User {
     })
     password!: string;
 
-    @ManyToMany(type => Task)
-    @JoinTable()
-    tasks!: Task[];
+    @ManyToMany(() => Task, task => task.users)
+    @JoinTable({name: "user_task"})
+    tasks!: Task[]
 
 }
